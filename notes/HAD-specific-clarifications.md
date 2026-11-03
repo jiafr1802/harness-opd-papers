@@ -14,10 +14,14 @@
 
 ## 三种训练方式不要混在一起
 
-论文的标准 OPD baseline 在学生当前回复的 token 前缀 $y_{<j}^\theta$ 上计算
+论文的标准 OPD baseline 在学生当前回复的 token 前缀 $y_{1:j-1}^\theta$ 上计算
 
 $$
-D_{KL}(\pi_\theta(\cdot\mid\tilde{x},y_{<j}^\theta)\|\pi_\phi(\cdot\mid\tilde{x},y_{<j}^\theta)),
+\mathrm{KL}\!\left(
+  \pi_\theta\!\left(\cdot \mid \tilde{x}, y_{1:j-1}^\theta\right)
+  \,\middle\|\,
+  \pi_\phi\!\left(\cdot \mid \tilde{x}, y_{1:j-1}^\theta\right)
+\right)
 $$
 
 即 token-level reverse KL。
@@ -27,7 +31,12 @@ HAD 的 response loss 不用这个 KL。教师先采样完整回复 $y^+=(z^+,a^
 Preference loss 则把 $a^+$、$a^-$ 都接到学生当前 reasoning $z_t^\theta$ 后评分：
 
 $$
--\log\sigma\{\beta[\log\pi_\theta(a^+\mid\tilde{x},z^\theta)-\log\pi_\theta(a^-\mid\tilde{x},z^\theta)]\}.
+-\log \sigma\!\left(
+  \beta\!\left[
+    \log \pi_\theta\!\left(a^+ \mid \tilde{x}, z^\theta\right)
+    - \log \pi_\theta\!\left(a^- \mid \tilde{x}, z^\theta\right)
+  \right]
+\right)
 $$
 
 它像无 reference 的 action-level DPO：不模仿教师 reasoning，只要求学生沿自己的 reasoning 生成时更偏好 $a^+$。action 若包含多个 token，分数仍是这些 token 的平均 log-probability。因此两个 loss 的区别不只是 $z$ 来自教师还是学生：response loss 学完整 $(z^+,a^+)$；preference loss 只学习 $a^+>a^-$，专门提取 harness 引起的相对变化。
