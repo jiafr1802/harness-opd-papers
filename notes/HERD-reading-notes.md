@@ -26,7 +26,17 @@ Teacher `p_H` 是冻结的 `θ_(t-1)`，看到 routed skill `K_t(x)`、prompt，
 D_{\mathrm{KL}}\left(p_k^H \parallel p_k^S\right)
 ```
 
-使用 verified-answer prefix 可以避免退化路径：如果改在学生自由采样的错误回复上比较，teacher 与 student 可能在“复述 prompt”等坏行为上恰好一致，从而没有有效梯度。因此 HERD 属于递归 self-distillation / harness internalization，但不能简单等同于标准 reverse-KL OPD。
+这里的 verified answer `y*` 是数据集提供、经过验证的正确目标，不是 student rollout 出来的答案。Verified-answer prefix `y*_<k` 表示正确答案在第 `k` 个 token 之前的部分。训练第 `k` 个位置时，teacher 和 student 都沿着这条正确前缀计算下一 token 的全词表分布：
+
+```math
+p_k^H = p_H(\cdot \mid K_t(x),x,y^*,y^*_{<k}),
+\qquad
+p_k^S = p_S(\cdot \mid x,y^*_{<k})
+```
+
+例如正确答案是 `B Thanks, Trudy`，训练过程依次比较空前缀后对 `B` 的分布、正确前缀 `B` 后对 `Thanks` 的分布，再比较 `B Thanks` 后的分布。Teacher 还通过 privileged context 看到 skill 和完整 verified answer；student 只看 bare prompt 与当前正确前缀。给 student 正确前缀只是训练时的 teacher forcing，部署推理时它不会获得 `y*`。
+
+这样做可以避免退化路径：如果改在 student 自由采样的错误前缀上比较，student 可能先走到“复述 prompt”等坏轨迹，而 teacher 在该异常前缀上也给出相近分布，导致 KL 很小、没有有效纠正信号。沿 verified-answer prefix 比较，则始终在正确答案路径上把 harness 提供的分布信息蒸进 student。因此 HERD 属于递归 self-distillation / harness internalization，但不能简单等同于标准 reverse-KL OPD。
 
 ## 双锚点 drift constraint
 
