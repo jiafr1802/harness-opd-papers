@@ -10,17 +10,17 @@ Agent 的轨迹天然以环境 step 组织：学生生成 reasoning 与 action�
 
 论文的标准 OPD baseline 在学生当前回复的 token 前缀上比较师生 token 分布，最小化 student-to-teacher reverse KL。HAD 自身没有沿用这个 loss。教师策略 `π_φ` 在学生访问的历史 `x_t^h` 上独立生成完整回复：
 
-$$
+```math
 y_t^{\phi,h} = (z_t^{\phi,h},a_t^{\phi,h})
-$$
+```
 
 随后学生以 teacher forcing 拟合该回复：预测教师回复的第 `j` 个 token 时，输入教师目标的前 `j-1` 个 token，而不是学生自由生成的当前回复前缀。例如教师目标是 `go to sink`，训练 `sink` 时给学生的前缀是教师目标中的 `go to`。其 loss 为
 
-$$
+```math
 \mathcal{L}_{\mathrm{dist}}
 = -\frac{1}{|y^{\phi,h}|}\sum_j
 \log \pi_{\theta}(y_j^{\phi,h} \mid x_t^h,y_{1:j-1}^{\phi,h})
-$$
+```
 
 这在优化形式上是完整回复的 SFT/交叉熵；但训练历史持续由当前学生 rollout 产生，所以仍是 on-policy distillation，而非固定离线数据。若对教师所有回复样本取期望，该交叉熵等价于最小化 `KL(π_φ || π_θ)` 加一个与学生无关的教师熵，即 forward-KL-like 的 Monte Carlo 监督。本文实现中，这个基础项与 SOPD（Step-level On-Policy Distillation）的核心做法基本一致。
 
@@ -30,13 +30,13 @@ $$
 
 普通响应蒸馏只告诉学生“带 harness 的教师做了什么”，学习的是 `P+(a)`；它不能单独识别某个 action 本来就常见，还是因为 harness 才变得更可能。HAD 因此让教师 `π_φ` 再读取去掉 harness 的历史 `x_t^0`，得到行动 `a-`，并把带 harness 时的 `a+` 作为偏好项：
 
-$$
+```math
 \mathcal{L}_{\mathrm{pref}}
 = -\log \sigma\left(\beta\left[
 \log \pi_{\theta}(a^+ \mid x_t^h,z_t^{\theta})
 - \log \pi_{\theta}(a^- \mid x_t^h,z_t^{\theta})
 \right]\right)
-$$
+```
 
 它形式上类似 reference-free、action-level DPO，但偏好对来自同一教师的有/无 harness 条件，而非人类标签。两个 action 都接在学生当前采样的 reasoning `z_t^θ` 后评分；教师 action 不会被环境执行。这样，response loss 在教师 reasoning 前缀下教授完整理想回复，preference loss 则保证学生沿自己实际生成的 reasoning 走时仍偏向 harness 所引导的 action。若 `a+ = a-`，偏好项没有梯度。
 
@@ -56,11 +56,11 @@ $$
 
 最终目标为
 
-$$
+```math
 \mathcal{L}_{\mathrm{HAD}}
 = \mathcal{L}_{\mathrm{dist}}
 + \lambda V(a^+ \mid x_t^h)\mathcal{L}_{\mathrm{pref}}
-$$
+```
 
 过滤只关闭 preference loss；教师错误仍可能进入 response distillation。因此 `V` 的作用是避免额外强化明显矛盾，而非验证完整正确性。图 1 第三类错误才由 `V` 处理，第二类错误主要由学生 reasoning 上的 action preference 处理。
 

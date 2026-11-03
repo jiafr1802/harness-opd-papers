@@ -36,23 +36,23 @@ for 学生访问的历史 x_t_h:
 
 论文的标准 OPD baseline 在学生当前回复的 token 前缀 `y_1:j-1^θ` 上计算：
 
-$$
+```math
 D_{\mathrm{KL}}\left(
 \pi_{\theta}(\cdot \mid x_t^h,y_{1:j-1}^{\theta})
 \parallel
 \pi_{\phi}(\cdot \mid x_t^h,y_{1:j-1}^{\theta})
 \right)
-$$
+```
 
 即 token-level reverse KL。
 
 HAD 的 response loss 不用这个 KL。教师 `π_φ` 先在学生的**交互历史前缀** `x_t^h` 上采样完整回复 `y+ = (z+, a+)`，学生 `π_θ` 再以 teacher forcing 逐 token 拟合它。若教师目标是 `Thought: go to the sink; Action: clean plate`，训练 `sink` 时输入教师目标中的 `go to the`，而不是学生可能生成的 `go to cabinet`。因此 action `a+` 在 response loss 中条件于教师 reasoning `z+`：
 
-$$
+```math
 \mathcal{L}_{\mathrm{dist}}
 = -\frac{1}{|y^+|}\sum_j
 \log \pi_{\theta}(y_j^+ \mid x_t^h,y_{1:j-1}^+)
-$$
+```
 
 它在优化形式上是完整回复的交叉熵/SFT，但数据不是固定离线数据：每轮学生策略更新后都会访问新的历史，所以仍是 on-policy distillation。对教师生成分布取期望，交叉熵等于 `KL(π_φ || π_θ) + H(π_φ)`；教师熵与学生参数无关，因此可理解为 forward KL 的单样本 Monte Carlo 监督。本文实现中，这一项与 SOPD 基线的核心做法相同。SOPD 的“step-level”指每个学生访问的环境 step 让教师写一个完整 step，再做这种交叉熵，并不是说训练不再逐 token 计算。
 
@@ -60,13 +60,13 @@ $$
 
 Preference loss 则把 `a+`、`a-` 都接到学生当前 reasoning `z_t^θ` 后评分：
 
-$$
+```math
 \mathcal{L}_{\mathrm{pref}}
 = -\log \sigma\left(\beta\left[
 \log \pi_{\theta}(a^+ \mid x_t^h,z_t^{\theta})
 - \log \pi_{\theta}(a^- \mid x_t^h,z_t^{\theta})
 \right]\right)
-$$
+```
 
 它像无 reference 的 action-level DPO：不模仿教师 reasoning，只要求学生沿自己的 reasoning 生成时更偏好 `a+`。action 若包含多个 token，分数仍是这些 token 的平均 log-probability。因此两个 loss 的区别不只是 reasoning 来自教师还是学生：response loss 学完整 `(z+, a+)`；preference loss 只学习 `a+ > a-`，专门提取 harness 引起的相对变化。
 
