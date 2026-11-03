@@ -17,4 +17,5 @@
 
 ## 阅读笔记
 
-- [HAD 核心机制与疑问澄清](notes/HAD-reading-notes.md)
+- [HAD 通用阅读笔记](notes/HAD-reading-notes.md)：论文主线、实验结果与方法边界。
+- [HAD 针对性理解](notes/HAD-specific-clarifications.md)：重点解释 step/token、on-policy/SFT、KL 方向、两类 reasoning 前缀、preference loss 与有效性检查器。
