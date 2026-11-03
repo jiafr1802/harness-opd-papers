@@ -2,27 +2,49 @@
 
 ## Summary
 
-HAD 的核心不是把 harness 蒸馏进模型，而是在部署时保留同一个 harness，并显式训练小模型“如何依据 harness 改变行动”。它以学生 rollout 到达的状态为训练分布，用教师完整回复做基础蒸馏，再比较同一教师在有/无 harness 时的行动，形成 action-level 偏好。规则型有效性检查器只过滤与当前环境事实明确冲突的正行动。该方法在三个结构化文本 benchmark 上有效，但尚未证明能直接推广到开放式软件 Agent。
+HAD 的核心不是把 harness 蒸馏进模型，而是在部署时保留同一个 harness，并显式训练小模型“如何依据 harness 改变行动”。它先让学生 rollout，以学生造成的交互历史作为 on-policy 状态；再让教师在这个学生历史前缀上生成一轮完整 reasoning/action，用 teacher forcing 交叉熵蒸馏。随后，同一教师在有/无 harness 两种输入下各生成一个 action，HAD 在学生自己的 reasoning 后做 action-level 偏好学习。规则型有效性检查器只过滤与当前环境事实明确冲突的正行动。该方法在三个结构化文本 benchmark 上有效，但尚未证明能直接推广到开放式软件 Agent。
 
 ## 从 OPD 到 HAD
 
-Agent 的轨迹天然以环境 step 组织：学生生成 reasoning 与 action，环境执行完整 action 后才返回新状态。所谓 on-policy，首先指训练状态来自当前学生的轨迹，而不规定 step 内必须使用哪种 token loss。
+Agent 的轨迹天然以环境 step 组织：学生生成 reasoning 与 action，环境执行完整 action 后才返回新状态。第 $t$ 步的历史 $\tilde{x}_t^\theta$ 包含任务、此前 observation、harness 文本，以及学生过去的 reasoning/action。所谓 on-policy，首先指这些训练状态由当前学生访问，而不规定 step 内必须使用哪种 token loss。step-level 是环境数据的组织粒度；token-level 是一个 step 内计算监督的粒度，两者并不冲突。
 
-论文的标准 OPD baseline 在学生生成的 token 前缀上计算 student-to-teacher reverse KL。HAD 自身没有沿用这个 loss：在学生访问的状态 $\tilde{x}_t^\theta$ 上，带 harness 的教师采样完整回复 $\tilde{y}_t^\phi=(\tilde{z}_t^\phi,\tilde{a}_t^\phi)$，学生以 teacher forcing 做交叉熵。对教师样本取期望时，这相当于局部 forward KL 的 Monte Carlo 估计。因此 HAD 的基础项可概括为“on-policy 状态上的动态 SFT”，并与本文实现的 SOPD 基线基本一致。
+论文的标准 OPD baseline 在学生当前回复的 token 前缀上比较师生 token 分布，最小化 student-to-teacher reverse KL。HAD 自身没有沿用这个 loss。它在学生访问的历史 $\tilde{x}_t^\theta$ 上查询教师，教师独立生成完整回复
 
-普通响应蒸馏只告诉学生“带 harness 的教师做了什么”，不能单独识别哪些行动概率是因为 harness 才上升的。HAD 因此在同一学生状态上再次移除 harness 信息，得到教师行动 $a^-$，并把带 harness 的行动 $a^+$ 作为偏好项：
+$$
+	ilde{y}_t^\phi=(\tilde{z}_t^\phi,\tilde{a}_t^\phi).
+$$
+
+随后学生以 teacher forcing 拟合该回复：预测教师回复的第 $j$ 个 token 时，输入教师目标的前 $j-1$ 个 token，而不是学生自由生成的当前回复前缀。例如教师目标是 `go to sink`，训练 `sink` 时给学生的前缀是教师目标中的 `go to`。其 loss 为
+
+$$
+\mathcal L_{\mathrm{dist}}
+=-\frac{1}{|\tilde y^\phi|}\sum_j
+\log \pi_\theta\!\left(\tilde y_j^\phi\mid\tilde x^\theta,\tilde y_{1:j-1}^\phi\right).
+$$
+
+这在优化形式上是完整回复的 SFT/交叉熵；但训练历史持续由当前学生 rollout 产生，所以仍是 on-policy distillation，而非固定离线数据。若对教师所有回复样本取期望，该交叉熵等价于最小化 $\mathrm{KL}(\pi_\phi\|\pi_\theta)$ 加一个与学生无关的教师熵，即 forward-KL-like 的 Monte Carlo 监督。本文实现中，这个基础项与 SOPD（Step-level On-Policy Distillation）的核心做法基本一致。
+
+这里需要同时分清四个维度。第一，on-policy/offline 描述**状态来自谁**：HAD 与 OPD 都使用学生访问的状态。第二，reverse KL/交叉熵描述**怎样对齐 token 分布**：标准 OPD baseline 在学生当前 token 前缀上做 reverse KL；HAD response loss 在教师目标前缀上做交叉熵。第三，step/token 描述**数据与 loss 的粒度**：SOPD 每个环境 step 请教师写完整回复，但这段回复仍逐 token 训练。第四，teacher/student reasoning 描述**action 在什么上下文中评分**：response loss 的 action 接在教师 reasoning 后，preference loss 的两个 action 接在学生 reasoning 后。这四组概念可以自由组合，不能简单地把“on-policy”等同于“reverse KL”，也不能把“step-level”等同于“不训练 token”。
+
+一次完整更新可以这样理解：学生先用当前策略跑若干任务，保存每个访问历史及其当前 reasoning；教师读取同一个学生历史，分别生成有/无 harness 的回复；response loss 用有 harness 的完整教师回复训练 reasoning 与 action，preference loss 用学生 reasoning 对两个教师 action 排序；最后把两项梯度合并更新学生，再由新学生重新 rollout。教师 action 从不进入环境，真正决定下一 observation 的始终是学生 action。
+
+普通响应蒸馏只告诉学生“带 harness 的教师做了什么”，学习的是 $P^+(a)$；它不能单独识别某个 action 本来就常见，还是因为 harness 才变得更可能。HAD 因此在同一学生历史上再次移除 harness 文本，得到教师行动 $a^-$，并把带 harness 的行动 $a^+$ 作为偏好项：
 
 $$
 \mathcal L_{\mathrm{pref}}=-\log\sigma\left(\beta[\log\pi_\theta(a^+\mid\tilde{x},z^\theta)-\log\pi_\theta(a^-\mid\tilde{x},z^\theta)]\right).
 $$
 
-它形式上类似 reference-free、action-level DPO，但偏好对来自同一教师的有/无 harness 条件，而非人类标签。更重要的是，两个 action 都接在学生自己的 reasoning $z^\theta$ 后评分；基础 response loss 则学习教师 reasoning 与 action。前者保证学生沿着实际生成的 reasoning 走时仍偏向 harness 所引导的行动，后者提供完整任务能力。区别不只在 $z$ 来自学生还是教师：response loss 模仿完整回复，preference loss 只比较 action，并专门提取 harness 引起的相对变化。若 $a^+=a^-$，偏好项没有梯度。
+它形式上类似 reference-free、action-level DPO，但偏好对来自同一教师的有/无 harness 条件，而非人类标签。两个 action 都接在学生当前采样的 reasoning $z^\theta$ 后评分；教师 action 不会被环境执行。这样，response loss 在教师 reasoning 前缀下教授完整理想回复，preference loss 则保证学生沿自己实际生成的 reasoning 走时仍偏向 harness 所引导的 action。后者强调近似 $\log P^+(a)-\log P^-(a)$ 的相对变化；若 $a^+=a^-$，它没有梯度。
 
-这也解释了图 1 的第二类错误：学生可能在语言上认识到“盘子未清洗”，却仍给出 `go to cabinet`。这不是教师必然错误，也不是 OPD 理论上无法学会；它说明普通模仿对少量 harness 关键决策只给出隐式信号。HAD 加入了针对这种差异的归纳偏置，并不构成对所有 OPD 的理论否定。
+“action-level”也不表示把整个 action 当成一个分类标签。若 action 是 `go to sink`，模型仍自回归地计算 `go`、`to`、`sink` 的 token log-probability，再取平均形成整段 action 的分数。它与标准 DPO 的相似处是 pairwise logistic loss；不同处是没有 reference model，正负样本也不是人类偏好，而是同一教师在两种上下文中的采样。
+
+这也解释了图 1 的第二类错误：学生可能在语言上认识到“盘子未清洗”，却仍给出 `go to cabinet`。带 harness 的教师此时可以完全正确；问题是学生自己的 reasoning 后仍把错误 action 赋予更高概率。Preference loss 正是在这个学生 reasoning 后提升 `go to sink` 相对 `go to cabinet` 的概率。这不是 OPD 理论上无法学会，而是普通模仿对少量 harness 关键决策只给出隐式信号；HAD 加入了更直接的归纳偏置。
 
 ## 有效性检查器 $V$
 
 $V(a\mid\tilde{x})\in\{0,1\}$ 不是模型、奖励函数或最优行动 ground truth，而是人工编写的确定性规则。它使用环境公开的 admissible commands、当前持有物和同状态失败历史，拒绝三类正行动：不在可用命令中、操作未持有物体、重复已经无效的动作。它不使用任务奖励、成功标签、未来状态，也不能识别“合法但策略错误”的行动。
+
+论文只检查正行动 $a^+$，因为 preference loss 会提高它的概率；若 $a^+$ 无效，强化它会伤害学生。负行动 $a^-$ 即使无效也无需过滤，因为 preference loss 正在降低其相对概率。这个 checker 更像高精度、低召回的安全筛网，而不是 correctness evaluator。
 
 最终目标为
 
