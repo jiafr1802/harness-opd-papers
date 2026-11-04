@@ -24,3 +24,4 @@
 - [OPHSD 阅读笔记](notes/OPHSD-reading-notes.md)：paired prompt/token KL、Memory Bank draft–verify、流程与动态内容的蒸馏边界及 pseudo-case 风险。
 - [HERD 阅读笔记](notes/HERD-reading-notes.md)：harness evolution、递归蒸馏、双锚点漂移约束与 TRACE+17。
 - [GUI-HARVEST 阅读笔记](notes/GUI-HARVEST-reading-notes.md)：重复 GUI 证据、跨任务行为模式、harness 源码修改和双门验证。
+- [VPD 阅读笔记](notes/VPD-reading-notes.md)：稀疏奖励瓶颈、Variational EM、teacher refinement、student distillation 与语言反馈边界。
