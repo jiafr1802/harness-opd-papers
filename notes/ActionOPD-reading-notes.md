@@ -87,6 +87,10 @@ ActionOPD 没有使用经典 token-level OPD 的 reverse KL，但延续了 OPD �
 
 Table 1 的 Average 对四个 benchmark 等权：AppWorld 使用 Normal/Challenge TGC 的均值，τ²-bench 使用三个 domain 的 pass1 均值。四组黑箱师生配置相对 Base 的平均分提升 3.3–6.9 个百分点。
 
+![论文 Table 1：ActionOPD 跨 benchmark 迁移结果](../assets/actionopd-table-1.png)
+
+*表源：ActionOPD 原文 Table 1。*
+
 主要限制是 semantic agreement 不等于正确性：teacher 错误会成为监督，LLM matcher 也可能误判。固定的 teacher/student 样本数还可能找不到本来存在的语义匹配。
 
 ## 代码与原文
