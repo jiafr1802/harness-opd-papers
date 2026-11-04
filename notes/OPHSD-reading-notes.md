@@ -18,10 +18,12 @@ OPHSD 把 inference harness 当作训练期 privileged teacher：当前 student 
 
 ```math
 \mathcal{L}_{\mathrm{OPHSD}}
-=\mathbb{E}_{x,\hat y}\frac{1}{|\hat y|}\sum_n
-D_{\mathrm{KL}}\left(p_S(\cdot\mid x,\hat y_{<n})
-\parallel
-p_T(\cdot\mid C[H_\theta(x,z)],\hat y_{<n})\right)
+= \mathrm{E}_{x,y}\frac{1}{|y|}\sum_n
+D_{\mathrm{KL}}\bigl(
+p_S(\cdot \mid x,y_{1:n-1})
+\,\Vert\,
+p_T(\cdot \mid C_H(x,z),y_{1:n-1})
+\bigr)
 ```
 
 论文图示和式 (3) 的排版容易让方向显得含混；代码 [`losses.py`](https://github.com/zzy1127/OPHSD-On-Policy-Harness-Self-Distillation/blob/main/ophsd_train/src/ophsd/losses.py) 明确定义 `reverse_kl = KL(p_S || p_T)`。
