@@ -19,4 +19,5 @@
 
 - [HAD 通用阅读笔记](notes/HAD-reading-notes.md)：论文主线、实验结果与方法边界。
 - [HAD 针对性理解](notes/HAD-specific-clarifications.md)：重点解释 step/token、on-policy/SFT、KL 方向、两类 reasoning 前缀、preference loss 与有效性检查器。
+- [ActionOPD 阅读笔记](notes/ActionOPD-reading-notes.md)：语义 action、黑箱教师、state-group rollout 与 GRPO-style 优化。
 - [HERD 阅读笔记](notes/HERD-reading-notes.md)：harness evolution、递归蒸馏、双锚点漂移约束与 TRACE+17。
