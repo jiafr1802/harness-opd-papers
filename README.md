@@ -13,7 +13,7 @@
 - [HERD: Harness-Evolving Recursive Distillation](HERD-Harness-Evolving%20Recursive%20Distillation%20for%20Continual%20Learning.pdf)：联合演化外部 harness 与参数能力，以缓解持续学习中的遗忘。
 - [GUI-HARVEST](GUI-Agent-Harness-Evolution.pdf)：根据 GUI 执行前后截图和重复运行证据自动改进 harness。
 - [VPD: Variational Policy Distillation](VPD-Learning%20from%20Language%20Feedback%20via%20Variational%20Policy%20Distillation.pdf)：以变分 EM 共同更新教师和学生，从语言反馈获得动态监督。
-- [Echo](Echo-Learning%20from%20Experience%20Data%20via%20User-Driven%20Refinement.pdf)：从用户对 Agent 输出的真实修正中提取持续学习信号。
+- [Echo](Echo-Learning%20from%20Experience%20Data%20via%20User-Driven%20Refinement.pdf)：不涉及 harness 或 OPD，核心是收集用户与 Agent 交互中的 refinement 数据并用于 SFT；与本仓库主线关系较弱，简要了解即可。
 
 ## 阅读笔记
 
