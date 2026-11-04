@@ -68,7 +68,14 @@ r_\lambda(s,y)=
 
 黑箱主实验只能直接比较 Base、ActionOPD student 和 teacher 本身，不能运行需要 teacher logits 的传统 reverse-KL OPD。为了比较蒸馏方法，论文另用可访问 logits 的 Qwen3-32B teacher 和 Qwen3-4B student，在 τ²-bench 上比较 offline KD、OPD 与 ActionOPD。ActionOPD 的 test pass1 为 40.0，高于 OPD 39.6 和 KD 37.5；但 pass4 为 14.2，低于 OPD 17.5 和 KD 19.2，不能声称全面更优。
 
-训练数据来自 AWM 与 EnvScaler；迁移评测使用 BFCL Multi-turn、ToolSandbox、AppWorld 和 τ²-bench。四组黑箱师生配置相对 Base 的四 benchmark 平均提升 3.3–6.9 个百分点。
+训练数据来自 AWM 与 EnvScaler，它们不计入最终四个 OOD benchmark。迁移评测具体包括：
+
+- [BFCL Multi-turn](https://gorilla.cs.berkeley.edu/leaderboard.html)：多轮 function/tool calling，本文报告 accuracy。
+- [ToolSandbox](https://github.com/apple-aiml-research/ToolSandbox)：带世界状态和工具依赖的对话式任务；本文使用 verified-local-only 子集并报告 trajectory similarity，不是二元成功率。
+- [AppWorld](https://appworld.dev/)（[官方代码](https://github.com/StonyBrookNLP/appworld)）：在模拟日常应用中进行交互式 API 调用；本文评测 Normal/Challenge，报告 task goal completion 与 scenario goal completion。
+- [τ²-bench](https://github.com/sierra-research/tau2-bench)：Airline、Retail、Telecom 三个客户服务域；本文报告 pass1 和 pass4，其中 pass4 表示四次 trial 全部成功，不是 best-of-four。
+
+Table 1 的 Average 对四个 benchmark 等权：AppWorld 使用 Normal/Challenge TGC 的均值，τ²-bench 使用三个 domain 的 pass1 均值。四组黑箱师生配置相对 Base 的平均分提升 3.3–6.9 个百分点。
 
 主要限制是 semantic agreement 不等于正确性：teacher 错误会成为监督，LLM matcher 也可能误判。固定的 teacher/student 样本数还可能找不到本来存在的语义匹配。
 
