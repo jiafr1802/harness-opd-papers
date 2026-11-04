@@ -64,6 +64,14 @@ r_\lambda(s,y)=
 
 由于每一步执行 group 中最高奖励 action，访问状态受到 teacher 引导，不再是普通 student policy 的纯 on-policy 分布，论文也承认存在一定 off-policy state visitation。
 
+## 为什么叫 OPD，而不直接叫 RL
+
+ActionOPD 没有使用经典 token-level OPD 的 reverse KL，但延续了 OPD 的核心数据逻辑：在 student 实际访问的环境状态上在线查询 teacher，让监督覆盖 student 会犯错的状态。更准确地说，teacher 不是接在 student 当前 token prefix 后续写，而是读取同一个公共环境状态，独立采样自己的 action。
+
+“蒸馏”和“RL”描述的是不同维度。蒸馏描述监督来源：奖励由 teacher action 的语义一致性定义，目标是把 teacher decision transfer 给 student；RL 描述优化方式：该 action-level 目标经 REINFORCE 推导后，用无 critic 的 GRPO/PPO-style policy gradient 更新 student。它没有使用环境终局 reward，所以不同于论文 Figure 2 中的 outcome-based RL。
+
+因此 ActionOPD 可以同时被称为 **teacher-supervised RL** 和 **action-level on-policy distillation**。如果删除 teacher、只用任务成功奖励，它才更接近普通 RL；如果只收集 teacher 轨迹再离线 SFT，则是 offline KD。这里的 “on-policy” 也不是严格纯净的：状态起于 student rollout，但每步执行 group 中 teacher-score 最高的候选，状态分布带有 teacher guidance。
+
 ## Baseline、实验与边界
 
 黑箱主实验只能直接比较 Base、ActionOPD student 和 teacher 本身，不能运行需要 teacher logits 的传统 reverse-KL OPD。为了比较蒸馏方法，论文另用可访问 logits 的 Qwen3-32B teacher 和 Qwen3-4B student，在 τ²-bench 上比较 offline KD、OPD 与 ActionOPD。ActionOPD 的 test pass1 为 40.0，高于 OPD 39.6 和 KD 37.5；但 pass4 为 14.2，低于 OPD 17.5 和 KD 19.2，不能声称全面更优。
@@ -74,6 +82,8 @@ r_\lambda(s,y)=
 - [ToolSandbox](https://github.com/apple-aiml-research/ToolSandbox)：带世界状态和工具依赖的对话式任务；本文使用 verified-local-only 子集并报告 trajectory similarity，不是二元成功率。
 - [AppWorld](https://appworld.dev/)（[官方代码](https://github.com/StonyBrookNLP/appworld)）：在模拟日常应用中进行交互式 API 调用；本文评测 Normal/Challenge，报告 task goal completion 与 scenario goal completion。
 - [τ²-bench](https://github.com/sierra-research/tau2-bench)：Airline、Retail、Telecom 三个客户服务域；本文报告 pass1 和 pass4，其中 pass4 表示四次 trial 全部成功，不是 best-of-four。
+
+这些都不是 vision-language 或 GUI benchmark。BFCL 评测结构化 function call；ToolSandbox 是文本对话加状态化工具；AppWorld 虽然模拟日常 app，但 agent 操作的是 API/代码和数据库状态，不看截图、不点击 GUI；τ²-bench 是文本客服对话加工具调用。本文因此没有验证视觉理解、屏幕定位或 GUI 点击能力。
 
 Table 1 的 Average 对四个 benchmark 等权：AppWorld 使用 Normal/Challenge TGC 的均值，τ²-bench 使用三个 domain 的 pass1 均值。四组黑箱师生配置相对 Base 的平均分提升 3.3–6.9 个百分点。
 
