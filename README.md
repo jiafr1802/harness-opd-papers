@@ -10,6 +10,7 @@
 
 - [HAD: Harness-Aware Distillation for Small Language Model Agents](HAD-Harness-Aware%20Distillation%20for%20Small%20Language%20Model%20Agents.pdf)：对比同一教师在有/无 harness 时的行动，显式训练小模型利用 harness。
 - [ActionOPD](Action-OPD.pdf)：以语义 action 而非 token 为蒸馏单位，无需教师 logits 或相同 tokenizer。
+- [OPHSD: On-Policy Harness Self-Distillation](OPHSD.pdf)：用 harness terminal context 形成 privileged teacher，在 student rollout token 上蒸馏程序性推理模式，并讨论动态外部信息的不可蒸馏边界。
 - [HERD: Harness-Evolving Recursive Distillation](HERD-Harness-Evolving%20Recursive%20Distillation%20for%20Continual%20Learning.pdf)：联合演化外部 harness 与参数能力，以缓解持续学习中的遗忘。
 - [GUI-HARVEST](GUI-Agent-Harness-Evolution.pdf)：根据 GUI 执行前后截图和重复运行证据自动改进 harness。
 - [VPD: Variational Policy Distillation](VPD-Learning%20from%20Language%20Feedback%20via%20Variational%20Policy%20Distillation.pdf)：以变分 EM 共同更新教师和学生，从语言反馈获得动态监督。
@@ -20,4 +21,5 @@
 - [HAD 通用阅读笔记](notes/HAD-reading-notes.md)：论文主线、实验结果与方法边界。
 - [HAD 针对性理解](notes/HAD-specific-clarifications.md)：重点解释 step/token、on-policy/SFT、KL 方向、两类 reasoning 前缀、preference loss 与有效性检查器。
 - [ActionOPD 阅读笔记](notes/ActionOPD-reading-notes.md)：语义 action、黑箱教师、state-group rollout 与 GRPO-style 优化。
+- [OPHSD 阅读笔记](notes/OPHSD-reading-notes.md)：paired prompt/token KL、Memory Bank draft–verify、流程与动态内容的蒸馏边界及 pseudo-case 风险。
 - [HERD 阅读笔记](notes/HERD-reading-notes.md)：harness evolution、递归蒸馏、双锚点漂移约束与 TRACE+17。
