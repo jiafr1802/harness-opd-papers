@@ -96,6 +96,14 @@ p_k^T=\pi_\phi^T(\cdot\mid x_t^T,y_{1:k-1})
 
 Online loss 使用 teacher-to-student forward KL，并逐 position clip，避免极大 KL 主导梯度。Student 与 teacher response mask 的交集决定哪些 token 参与；若完整 response 没有合法环境 action，则整段 mask 为 0。
 
+#### Online Teacher 是否独立 rollout？
+
+不会。当前环境状态由 visual student 之前执行的 actions 与 observations 形成；到第 `t` 步后，visual student 先采样完整 response `y_t`，其中可以同时包含 reasoning 与 action。Frozen text teacher 不生成另一条 reasoning/action，也不向环境提交自己的 action，而是作为 sidecar scorer，在每个 **student-generated prefix** `y_{1:k-1}` 上输出全词表 next-token distribution。只有 student response 中解析出的 action 会推进环境。
+
+因此“Teacher 没有继续生成 argument”并不是这里的问题。即使 student 已经生成到 function call 或 JSON argument 中间，Teacher 仍会对该 prefix 下的所有候选 token 给出概率；实际下一个 token 仍由 student policy 采样，KL 只提供分布级训练信号。
+
+真正的失败模式是 student 最终得到截断或不可解析的 tool call。CAPS 在完整 response 层面检查 action：若没有合法可执行 action，就将整段 online-distillation mask 置零。这能避免用 malformed response 计算 KL，却不会直接教会模型如何补全括号或修复 argument；Teacher 在异常 student prefix 上的分布也可能是噪声。工程实现若要求严格结构合法，可额外使用 grammar/JSON-schema constrained decoding，再保留 action validation 与 invalid-response mask。论文方法本身依赖后两者，而不是让 Teacher 接管半截 tool call。
+
 最终目标为：
 
 ```math
