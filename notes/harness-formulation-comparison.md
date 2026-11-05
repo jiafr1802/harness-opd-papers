@@ -44,6 +44,33 @@ y = R_H(q_T).
 
 并非每篇论文都包含以上全部组成。把所有 harness 都简称为“prompt”会低估 OPHSD 和 GUI-HARVEST；把它都称为“完整 agent runtime”又会夸大 HAD 中 harness 的权限。
 
+## 先看代码：Harness 在运行时由什么构成
+
+从实现而不是论文术语看，一个 harness 通常至少有四个可分离部分：
+
+```text
+state/store   保存环境记录、memory、skill 或优化 ledger
+renderer      把 state 和当前输入渲染成 chat messages / observation page
+controller    决定调用次数、路由、重试、验证和终止
+interfaces    解析 action，调用工具或环境，再把结果写回 state
+```
+
+它不一定是一个名为 `Harness` 的类。HAD 主要体现为 deterministic tracker + text renderer；OPHSD 是 retrieval store + 多次 LLM call controller；HERD 的可部署部分主要是 JSON skill registry + system-message router；GUI-HARVEST 的 harness 则是一个可编辑源码目录，另有一套 JSON artifacts 管理优化流程。
+
+```mermaid
+flowchart LR
+  X[task / observation] --> S[harness state or store]
+  S --> R[renderer / router]
+  R --> P[model messages]
+  P --> M[frozen or trainable backbone]
+  M --> A[response / action]
+  A --> C[controller / parser / executor]
+  C --> E[environment or next model call]
+  E --> S
+```
+
+因此比较 harness 时，最有用的问题不是“它有没有 prompt”，而是：**state 存在哪里、renderer 输出什么格式、controller 控制哪些调用、哪些内容会进入模型上下文、部署时哪些部分仍存在。**
+
 ## 逐篇定义
 
 ### HAD：固定的文本状态跟踪与行为监控
@@ -74,6 +101,54 @@ a_t^- \sim \pi_\phi(\cdot \mid x_t^0).
 
 因此 HAD 中的核心问题是 **harness-conditioned action use**，而不是 harness 本身如何生成或演化。
 
+#### HAD 在页面上实际长什么样
+
+HAD 的公开仓库目前仍写着 “code, harness, and training scripts will be released”，没有可核对的源码 schema。下面只能依据论文 Appendix B.2 的模板和触发规则还原运行时格式，不能把它冒充官方 JSON 类型。
+
+每一步传给模型的 user page 大致是：
+
+```text
+Observation: Nothing happens.
+
+You are at sofa 1. You are holding remotecontrol 1.
+12 of 14 places visited; 2 unvisited (garbagecan 1, ottoman 1).
+This visit to sofa 1: arrived turn 18, 2 commands executed since.
+Here, 'take remotecontrol 2 from sofa 1' does nothing (attempt 2).
+This state will not accept it; choose another action.
+Step 21 of 30. Only 9 steps remain.
+
+Admissible commands:
+examine remotecontrol 1 / go to armchair 1 / ...
+```
+
+对应的内部记录可以用以下**示意结构**理解：
+
+```json
+{
+  "situation": {"location": "sofa 1", "holdings": ["remotecontrol 1"]},
+  "visit": {"visited": 12, "unvisited": ["garbagecan 1", "ottoman 1"]},
+  "budget": {"step": 21, "cap": 30},
+  "failure": {"action": "take remotecontrol 2 from sofa 1", "attempts": 2},
+  "stall": {"steps_without_new_state": 0}
+}
+```
+
+这里真正的 harness 本质是：从环境状态和历史计算这些字段，按固定模板转成文本，再插到 observation 与 admissible commands 之间。论文明确说明，同一套代码和模板跨三个环境共享，只有读取环境状态的 adapter 不同；它不会替模型选 action，也不会拦截 action。
+
+```mermaid
+flowchart LR
+    O[environment observation] --> T[state/history tracker]
+    H[interaction history] --> T
+    T --> L[harness text lines]
+    L --> U[user page: observation + lines + commands]
+    U --> M[student / teacher]
+    M --> A[action]
+    A --> E[environment executes]
+    E --> O
+```
+
+源码状态：[`moon4sake/harness-aware-distillation`](https://github.com/moon4sake/harness-aware-distillation) 目前只有项目页文件，尚未公开训练与 harness 实现。
+
 ### OPHSD：任务特定的多调用推理程序
 
 OPHSD 把 inference harness 形式化为一个由模型调用和确定性状态转移组成的动态程序。它维护状态 `s_t`，第 `t` 次调用基于当前状态产生内容 `c_t`，确定性转移函数 `τ_H` 更新状态，最终 readout `ρ_H` 从终态抽取答案：
@@ -103,6 +178,73 @@ p_T(\cdot \mid C_H(x,z),y_{1:n-1})
 
 部署时移除 harness。只有能由 `x` 和参数知识重建的 procedure 可以完整蒸馏；实时网页、代码执行结果和动态环境反馈等新信息不能由无 harness student 凭空恢复。
 
+#### OPHSD 的真实数据结构与消息
+
+OPHSD 的 Memory Bank 不是抽象“知识库”，而是 Python 中三部分并行存储：`examples`、embedding matrix、按标签建立的 `_label_idx`。以 LawBench 为例，一条输入/Bank record 的核心字段是：
+
+```json
+{
+  "fact": "案件事实文本",
+  "accusations": ["盗窃", "诈骗"],
+  "label_str": "盗窃;诈骗"
+}
+```
+
+`fact` 被 BGE encoder 转成向量用于 cosine retrieval。Draft 阶段取 5 个相似记录；模型输出 draft labels 后，再按标签过滤同一个 Bank，分别取 5 个 confirmers 和 5 个 challengers。Harness 返回的 trace 接近：
+
+```json
+{
+  "mode": "full",
+  "draft_response": "...",
+  "final_response": "...",
+  "draft_labels": ["故意伤害"],
+  "trace": {
+    "draft": {
+      "retrieved": [{"fact": "...", "label_str": "故意伤害"}],
+      "messages": [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}],
+      "response": "...",
+      "extracted_labels": ["故意伤害"]
+    },
+    "verify": {
+      "confirmers": [{"fact": "...", "label_str": "故意伤害"}],
+      "challengers": [{"fact": "...", "label_str": "过失致人死亡"}],
+      "messages": [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}],
+      "response": "..."
+    }
+  }
+}
+```
+
+Verify user message不是 tool-call transcript，而是直接拼好的文本：先写原问题和 draft label，再列“支持该罪名的类似判例”与“情况相似但罪名不同的判例”，最后要求维持或修正。
+
+训练 batch 又把 trace 变成两条共享 response token 的序列：
+
+```text
+student sequence = bare prompt            + student rollout response
+teacher sequence = verify/draft messages  + same student rollout response
+loss mask        = 0 for either prompt, 1 for the shared response
+```
+
+```mermaid
+flowchart TD
+    X[current record] --> EMB[embed fact]
+    EMB --> MB[(MemoryBank)]
+    MB --> D5[top-5 similar cases]
+    D5 --> DP[draft messages]
+    DP --> LLM1[model call: draft]
+    LLM1 --> LABEL[draft labels]
+    LABEL --> CF[retrieve confirmers / challengers]
+    CF --> VP[verify messages]
+    VP --> TC[teacher context]
+    X --> SR[bare student rollout response]
+    TC --> TK[teacher logits on SR tokens]
+    SR --> SK[student logits on same tokens]
+    TK --> KL[reverse KL on response mask]
+    SK --> KL
+```
+
+关键源码：[`_memory_bank.py`](https://github.com/zzy1127/OPHSD-On-Policy-Harness-Self-Distillation/blob/main/ophsd_train/harnesses/_memory_bank.py)、[`draft_verify.py`](https://github.com/zzy1127/OPHSD-On-Policy-Harness-Self-Distillation/blob/main/ophsd_train/harnesses/lawbench/draft_verify.py)、[`batch_builder.py`](https://github.com/zzy1127/OPHSD-On-Policy-Harness-Self-Distillation/blob/main/ophsd_train/src/ophsd/batch_builder.py)。
+
 ### HERD：skill registry 与 high-residual memory
 
 HERD 给出了最明确的集合式定义：
@@ -123,6 +265,68 @@ f(x;\theta,K_t),
 
 HERD 中 harness 是 continual learning 的**快速、选择性、容量有限的外部层**，模型权重是缓慢、持久的内部层。每个 stage 先演化 `H_t`，再把 skill 提供的分布优势蒸馏进新权重 `θ_t`。最终部署只保留权重，不携带 `H_t`。
 
+#### HERD 的正式 JSON schema 与路由
+
+HERD 的 skill registry 有公开、严格校验的 schema：
+
+```json
+{
+  "schemaVersion": "hero-harness-spec-v1",
+  "skills": [
+    {
+      "id": "trace:C-STANCE",
+      "promptPrefix": "Classify the stance:",
+      "instructions": "Format: one letter.\nRules:\n- choose A, B, or C\nAvoid:\n- explanations\nExamples:\n- ..."
+    }
+  ]
+}
+```
+
+Router 对 prompt 做 NFKC、空白折叠和 lowercase normalization，然后选**最长匹配 prefix**。命中 skill 后，它不把整个 registry 都塞进 prompt，而只渲染一个 system message：
+
+```text
+Apply this task skill.
+<skill>
+{matched_skill.instructions}
+</skill>
+```
+
+Skill writer 的输入窗口最多包含 16 个 verified records 和 4 个 checkpoint mistakes，要求按 `Format / Rules / Avoid / Examples` 四个标题输出。候选 skill 只有在降低该窗口 verified-answer mean NLL 且 registry 不超过 token budget 时才 commit。
+
+Residual memory 中保留的是完整训练记录，运行代码中的核心字段为：
+
+```json
+{
+  "id": "sample-id",
+  "prompt": "完整输入",
+  "answer": "verified answer",
+  "taskId": "trace:C-STANCE",
+  "tokens": 213
+}
+```
+
+Residual score 不必永久写进 record，而是在 refresh 时重新计算；`TopBudget` 按 residual 从高到低扫描，整条 record 能放入预算才保留。尤其要注意：`R_t` 不是在线 inference retrieval，也不是 replay target。下一 stage 只拿其中的 bare prompts 生成 checkpoint-anchor probes，约束新 student 不要偏离旧 checkpoint。
+
+```mermaid
+flowchart TD
+    A[current task records A_t] --> ERR[frozen checkpoint predictions]
+    ERR --> MIS[up to 4 mistakes]
+    A --> WRITER[base model skill writer]
+    MIS --> WRITER
+    WRITER --> SKILL[skill: id + prefix + instructions]
+    SKILL --> GUARD{residual decreases and budget fits?}
+    GUARD -->|yes| K[new JSON registry K_t]
+    GUARD -->|no| KOLD[keep K_t-1]
+    K --> ROUTE[longest-prefix router]
+    ROUTE --> SYS[one matched skill as system message]
+    SYS --> TEACHER[privileged teacher for distillation]
+    TEACHER --> WEIGHTS[merge LoRA into theta_t]
+    WEIGHTS --> REFRESH[recompute record residuals]
+    REFRESH --> R[high-residual memory R_t for future drift probes]
+```
+
+关键源码：[`hero-harness-evolving/src/index.ts`](https://github.com/a1exsun/HERD/blob/main/packages/hero-harness-evolving/src/index.ts)、[`stream/hero.py`](https://github.com/a1exsun/HERD/blob/main/packages/hero-drift-constrained-opd/stream/hero.py)、[`stream/run.py`](https://github.com/a1exsun/HERD/blob/main/packages/hero-drift-constrained-opd/stream/run.py)。
+
 ### GUI-HARVEST：可编辑的完整 agent runtime
 
 GUI-HARVEST 使用最宽的工程定义。Harness 是冻结视觉语言 backbone 外部的**可执行源码系统**，包括 prompt/context construction、memory、action/tool interface、control flow、verification、error recovery 和 termination logic。它不是单个 prompt，也不是只有 memory。
@@ -140,6 +344,88 @@ H_{i+1} = \mathrm{Promote}(H_i + \Delta_i)
 ```
 
 仅当代码检查、Search/Validation utility gate 和预注册 behavior gate 全部通过时才 promote，否则 rollback。这里学习发生在 `H` 的源码，而不是 `θ`；优化结束后部署的是冻结 backbone 加优化后的 harness `H_*`。
+
+#### GUI-HARVEST 不是一个 JSON Harness，而是一棵源码树
+
+GUI-HARVEST 中被优化的 harness 是 adapter 指向的 runtime repository。`capability.json` 规定 editable/create/read-only 路径，`HARNESS_CARD.md` 描述这些文件产生的可观察行为；两者和源码文件一起计算 behavior hash。Engineer 必须同时修改源码与 Harness Card，不能只改说明。
+
+每次 GUI rollout 的目录格式是：
+
+```text
+run_manifest.json
+.../<domain>/<task_id>/
+    result.txt
+    traj.jsonl
+    step_0.png
+    step_1.png
+    ...
+```
+
+`traj.jsonl` 每行是一个 step，常见字段包括 `step_num`、`plan`、`action`、`plan_code`、`exec_code`、`reflection`、`screenshot_file`、`reward`，以及 harness 新增的 telemetry。Analyst 把多次运行转成 finding：
+
+```json
+{
+  "finding_id": "f1a2b3c4d5",
+  "task_id": "...",
+  "run": "C",
+  "decisive_step": 7,
+  "signature": {"action": "click", "outcome": "no_effect", "noticed": "no"},
+  "did": "clicked once and continued",
+  "machine": "screen remained unchanged",
+  "mechanism": "agent advances after an ineffective action",
+  "counterfactual": "verify screen change and switch approach",
+  "quotes": ["verbatim trajectory quote"]
+}
+```
+
+Clusterer 看不到原始 trajectory/screenshots，只接收精简 finding 字段，并输出：
+
+```json
+{
+  "label": "NO_PROGRESS_AFTER_ACTION",
+  "mechanism": "action has no observable effect but control advances",
+  "membership_test": "finding reports unchanged state after action",
+  "behavioral_target": "verify effect before continuing",
+  "members": ["f1", "f2"]
+}
+```
+
+模式必须横跨至少两个 task，否则进入 `residue`。Engineer 接收 `SESSION.json`、`engineer_queue.json`、`findings.jsonl`、`modes.json`、`capability.json` 和 `ledger.json`，先写 `proposal.pre.json` 冻结 target、源码位置、intervention、预测、invariants 和风险，再修改 candidate source。正式 proposal 使用 `gui-harvest-intervention-v1`，其 patch manifest 记录 action、path、before/after SHA-256。
+
+Validator 为每个预注册 prediction 和 target task 输出：
+
+```json
+{
+  "prediction_id": "p1",
+  "task_id": "...",
+  "verdict": "supported",
+  "summary": "predicted recovery occurred",
+  "citations": [{"run": "A", "step": 3, "claim": "dialog resolved before done"}]
+}
+```
+
+最终机械决策 artifact 为 `gui-harvest-promotion-decision-v1`，包含 `decision: promote|rollback` 以及 local、utility、behavior 三个 gate。Ledger 再把 proposal、patch、predictions、verdicts、decision 和反馈追加到 `gui-harvest-update-ledger-v1`。
+
+```mermaid
+flowchart LR
+    RUNS[K rollout dirs: traj.jsonl + screenshots] --> FIND[findings.jsonl]
+    FIND --> MODES[modes.json]
+    MODES --> QUEUE[engineer_queue.json]
+    QUEUE --> PRE[proposal.pre.json]
+    CAP[capability.json] --> PRE
+    LEDGER[ledger.json] --> PRE
+    PRE --> PATCH[candidate harness source patch]
+    PATCH --> CHECKS[L0/L1 checks]
+    CHECKS --> POST[post-edit Search/Validation runs]
+    POST --> VERDICTS[validator verdicts with run/step citations]
+    VERDICTS --> DECISION{all gates pass?}
+    DECISION -->|yes| PROMOTE[promote source tree]
+    DECISION -->|no| ROLLBACK[restore baseline snapshot]
+    PROMOTE --> LEDGER
+    ROLLBACK --> LEDGER
+```
+
+关键源码：[`evidence/trajectory.py`](https://github.com/GaryYang12345/GUI-HARVEST/blob/main/gui_harvest/evidence/trajectory.py)、[`roles/cluster.py`](https://github.com/GaryYang12345/GUI-HARVEST/blob/main/gui_harvest/roles/cluster.py)、[`roles/engineer.py`](https://github.com/GaryYang12345/GUI-HARVEST/blob/main/gui_harvest/roles/engineer.py)、[`roles/validator.py`](https://github.com/GaryYang12345/GUI-HARVEST/blob/main/gui_harvest/roles/validator.py)。
 
 ## 横向对照
 
