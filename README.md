@@ -31,3 +31,4 @@
 - [LensVLM Harness-OPD 研究计划（中文版）](notes/LensVLM-Harness-OPD-proposal-zh.md)：中文完整研究方案，包含两张工作流图、OPD 公式、实验矩阵、消融、评测及分阶段实施方案。
 - [PRISM：可迁移性驱动 Harness-OPD 研究计划（中文）](notes/PRISM-transferability-aware-harness-distillation-proposal-zh.md)：区别 Harness 的特权收益与 Student 可迁移收益，提出反事实证据干预、可观察性估计、动态 OPD 加权与可选的 Distillation-Aware Harness Optimization，并给出完整实验及投稿方案。
 - [LensVLM 论文阅读笔记（中文）](notes/LensVLM-reading-notes.md)：包含作者 Figure 2 原图、压缩/Expand 三种返回形式、Hard Sample 数据、SFT+DAPO 训练与结果、对 Harness-OPD 的启发。
+- [PRISM Plan B：Budget-Aware Harness OPD（中文）](notes/PRISM-plan-b-budget-aware-harness-opd-zh.md)：保底方案：部署保留受预算约束的 Expand；明确 HAD/ActionOPD/LensVLM 的方法重叠，提出以信息获取边际价值（VoI）为候选研究方向、基线、实验及准确率—成本评测。
