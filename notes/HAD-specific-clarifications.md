@@ -4,6 +4,10 @@
 
 理解 HAD 的关键是把三个维度分开：**状态从谁的轨迹来、当前回复使用谁的 token 前缀、loss 在模仿完整回复还是比较 action**。HAD 不是传统 reverse-KL OPD，而是“学生轨迹上的 SOPD 式完整回复蒸馏 + 学生 reasoning 上的 action preference”。第一项把教师在学生历史前缀上新生成的一轮内容做 teacher-forcing 交叉熵，是 forward-KL-like 的监督；第二项才使用学生当前 reasoning。有无 harness 的教师对比不是因为普通 OPD 原理上学不会，而是显式标出 harness 真正改变决策的位置；有效性检查器 `V` 只处理明显无效的教师正行动。
 
+![论文 Figure 3：HAD 核心方法流程](../assets/had-figure-3.png)
+
+*图源：HAD 原文 Figure 3。*
+
 ## 符号约定
 
 `θ` 表示学生模型参数，学生策略写作 `π_θ`；`φ` 表示固定教师模型参数，教师策略写作 `π_φ`。`x_t^h` 表示学生走到第 `t` 步时包含 harness 的完整交互历史，`x_t^0` 表示保留同一轨迹但移除 harness 文本后的历史。上标 `h/0` 描述输入是否有 harness，上标 `θ/φ` 描述回复由学生还是教师生成。

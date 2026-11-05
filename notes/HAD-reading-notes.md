@@ -4,6 +4,10 @@
 
 HAD 的核心不是把 harness 蒸馏进模型，而是在部署时保留同一个 harness，并显式训练小模型“如何依据 harness 改变行动”。下文用 `θ` 表示学生参数、`φ` 表示固定教师参数，因而 `π_θ` 是学生策略、`π_φ` 是教师策略。HAD 先让学生 rollout，以学生造成的交互历史作为 on-policy 状态；再让教师在这个学生历史前缀上生成一轮完整 reasoning/action，用 teacher forcing 交叉熵蒸馏。随后，同一教师在有/无 harness 两种输入下各生成一个 action，HAD 在学生自己的 reasoning 后做 action-level 偏好学习。
 
+![论文 Figure 3：HAD 核心方法流程](../assets/had-figure-3.png)
+
+*图源：HAD 原文 Figure 3。*
+
 ## 从 OPD 到 HAD
 
 Agent 的轨迹天然以环境 step 组织：学生生成 reasoning 与 action，环境执行完整 action 后才返回新状态。第 `t` 步带 harness 的学生历史记为 `x_t^h`，它包含任务、此前 observation、harness 文本，以及学生过去的 reasoning/action；移除 harness 文本后的同一历史记为 `x_t^0`。所谓 on-policy，首先指这些训练状态由当前学生访问，而不规定 step 内必须使用哪种 token loss。step-level 是环境数据的组织粒度；token-level 是一个 step 内计算监督的粒度，两者并不冲突。
