@@ -28,3 +28,4 @@
 - [VPD 阅读笔记](notes/VPD-reading-notes.md)：稀疏奖励瓶颈、Variational EM、teacher refinement、student distillation 与语言反馈边界。
 - [LensVLM → Harness-Augmented OPD Research Proposal](notes/LensVLM-Harness-OPD-proposal.md)：将压缩视觉上下文的按需展开改造成 Teacher-only Harness，提出无工具 Student 的 OPD 训练方法、对照实验、评测指标及信息丢失边界。
 - [LensVLM Harness-OPD 研究计划（中文版）](notes/LensVLM-Harness-OPD-proposal-zh.md)：中文完整研究方案，包含两张工作流图、OPD 公式、实验矩阵、消融、评测及分阶段实施方案。
+- [PRISM：可迁移性驱动 Harness-OPD 研究计划（中文）](notes/PRISM-transferability-aware-harness-distillation-proposal-zh.md)：区别 Harness 的特权收益与 Student 可迁移收益，提出反事实证据干预、可观察性估计、动态 OPD 加权与可选的 Distillation-Aware Harness Optimization，并给出完整实验及投稿方案。
