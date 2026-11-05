@@ -13,6 +13,7 @@
 - [OPHSD: On-Policy Harness Self-Distillation](OPHSD.pdf)：用 harness terminal context 形成 privileged teacher，在 student rollout token 上蒸馏程序性推理模式，并讨论动态外部信息的不可蒸馏边界。
 - [CAPS: Reading is not Reasoning — Bridging the Agentic Policy Gap in Vision-Text Compression](CAPS-Reading-is-not-Reasoning.pdf)：将 Agent 交互历史从文本渲染成图像后，性能下降不只是 OCR 问题，也包括搜索、行动选择、停止和证据使用的策略偏移；通过离线轨迹蒸馏和在线跨模态策略蒸馏改善视觉历史 Agent。([arXiv:2608.08960v2](https://arxiv.org/abs/2608.08960))
 - [Harness Policy Distillation](HARNESS%20POLICY%20DISTILLATION.pdf)：回放 reference trajectories 恢复 runtime control semantics，用 control document 与 harness-verified actions 联合训练 native/injected/control 三种视图，使模型在原 harness interface 下更符合执行契约。
+- [Reading Is Not Reasoning](READING%20IS%20NOT%20REASONING-BRIDGING%20THE%20AGEN-TIC%20POLICY%20GAP%20IN%20VISION%E2%80%93TEXT%20COMPRESSION.pdf)：识别 text-to-image history compression 引起的 agentic policy gap，并用 CAPS 的离线轨迹蒸馏、visual-history GRPO 与在线 forward-KL 进行跨模态策略对齐。
 - [HERD: Harness-Evolving Recursive Distillation](HERD-Harness-Evolving%20Recursive%20Distillation%20for%20Continual%20Learning.pdf)：联合演化外部 harness 与参数能力，以缓解持续学习中的遗忘。
 - [GUI-HARVEST](GUI-Agent-Harness-Evolution.pdf)：根据 GUI 执行前后截图和重复运行证据自动改进 harness。
 - [VPD: Variational Policy Distillation](VPD-Learning%20from%20Language%20Feedback%20via%20Variational%20Policy%20Distillation.pdf)：以变分 EM 共同更新教师和学生，从语言反馈获得动态监督。
@@ -28,6 +29,7 @@
 - [HERD 阅读笔记](notes/HERD-reading-notes.md)：harness evolution、递归蒸馏、双锚点漂移约束与 TRACE+17。
 - [GUI-HARVEST 阅读笔记](notes/GUI-HARVEST-reading-notes.md)：重复 GUI 证据、跨任务行为模式、harness 源码修改和双门验证。
 - [VPD 阅读笔记](notes/VPD-reading-notes.md)：稀疏奖励瓶颈、Variational EM、teacher refinement、student distillation 与语言反馈边界。
+- [Reading Is Not Reasoning / CAPS 阅读笔记](notes/Reading-Is-Not-Reasoning-CAPS-reading-notes.md)：视觉历史的 policy gap、离线/在线跨模态自蒸馏、GRPO、benchmark 与 LensVLM/PRISM 关系。
 - [LensVLM → Harness-Augmented OPD Research Proposal](notes/LensVLM-Harness-OPD-proposal.md)：将压缩视觉上下文的按需展开改造成 Teacher-only Harness，提出无工具 Student 的 OPD 训练方法、对照实验、评测指标及信息丢失边界。
 - [LensVLM Harness-OPD 研究计划（中文版）](notes/LensVLM-Harness-OPD-proposal-zh.md)：中文完整研究方案，包含两张工作流图、OPD 公式、实验矩阵、消融、评测及分阶段实施方案。
 - [PRISM：可迁移性驱动 Harness-OPD 研究计划（中文）](notes/PRISM-transferability-aware-harness-distillation-proposal-zh.md)：区别 Harness 的特权收益与 Student 可迁移收益，提出反事实证据干预、可观察性估计、动态 OPD 加权与可选的 Distillation-Aware Harness Optimization，并给出完整实验及投稿方案。
