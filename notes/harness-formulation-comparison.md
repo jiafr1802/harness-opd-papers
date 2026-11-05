@@ -11,7 +11,7 @@ HAD、OPHSD、HERD 和 GUI-HARVEST 分别强调 harness 的四个层次：**文�
 下面不是任何一篇论文原封不动给出的定义，而是便于比较的统一 formulation。设：
 
 - `x` 是任务输入；
-- `τ_<t` 是第 `t` 步之前的 observation、reasoning、action 和 tool result 历史；
+- `τ_(1:t-1)` 是第 `t` 步之前的 observation、reasoning、action 和 tool result 历史；
 - `e_t` 是可选的外部信息，如 memory、检索结果、verified answer 或 GUI 执行证据；
 - `θ` 是 backbone 参数；
 - `H` 是不属于 `θ` 的外部机制。
@@ -19,9 +19,9 @@ HAD、OPHSD、HERD 和 GUI-HARVEST 分别强调 harness 的四个层次：**文�
 最小的 context-level harness 可以写成：
 
 ```math
-c_t^H = H(x, \tau_{<t}, e_t),
+c_t^H = H(x, \tau_{1:t-1}, e_t),
 \qquad
-(z_t,a_t) \sim \pi_\theta(\cdot \mid x,\tau_{<t},c_t^H).
+(z_t,a_t) \sim \pi_\theta(\cdot \mid x,\tau_{1:t-1},c_t^H).
 ```
 
 这里 `H` 产生额外上下文 `c_t^H`，模型仍负责生成 reasoning `z_t` 和 action `a_t`。更一般地，harness 可以维护内部状态并组织多次模型调用：
@@ -56,8 +56,8 @@ HAD 没有把 harness 定义成一个独立的通用程序 `H`，而是把它实
 可将其写为：
 
 ```math
-h_t = H_{\mathrm{track}}(\tau_{\le t})
-\oplus H_{\mathrm{monitor}}(\tau_{\le t}),
+h_t = H_{\mathrm{track}}(\tau_{1:t})
+\oplus H_{\mathrm{monitor}}(\tau_{1:t}),
 \qquad
 x_t^h = x_t^0 \oplus h_t.
 ```
@@ -94,11 +94,11 @@ y = \rho_H(s_T).
 训练时用 `C[H_θ(x,z)]` 表示 harness 运行后的 terminal context。它只作为 teacher conditioning；裸 student 只看 `x`。所以 OPHSD 要内化的是 harness 诱导的**程序性推理分布**，不是复制整个 harness trace：
 
 ```math
-D_{\mathrm{KL}}\!\left(
-p_S(\cdot \mid x,y_{<n})
+D_{\mathrm{KL}}\bigl(
+p_S(\cdot \mid x,y_{1:n-1})
 \,\Vert\,
-p_T(\cdot \mid C[H_\theta(x,z)],y_{<n})
-\right).
+p_T(\cdot \mid C_H(x,z),y_{1:n-1})
+\bigr).
 ```
 
 部署时移除 harness。只有能由 `x` 和参数知识重建的 procedure 可以完整蒸馏；实时网页、代码执行结果和动态环境反馈等新信息不能由无 harness student 凭空恢复。
