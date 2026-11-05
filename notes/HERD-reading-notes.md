@@ -4,6 +4,10 @@
 
 HERD 面向 continual learning，把学习拆成快慢两层：harness 是快速、可编辑但容量有限的外部记忆；模型参数是缓慢、持久的长期记忆。每个 stage 先让 harness 从当前任务中提炼 skill，并保留 skill 仍解释不了的高残差样本；再把“上一 checkpoint + 新 harness”提供的能力蒸馏回同一模型的新 LoRA 中。蒸馏同时受 previous-checkpoint 与 base-model 两个 drift anchor 约束，前者防止单阶段忘掉旧任务，后者防止许多小偏移累积成通用能力崩塌。最终部署只有更新后的模型权重，不携带 harness。
 
+![论文 Figure 1：HERD 单个递归 stage 的核心流程](../assets/herd-figure-1.png)
+
+*图源：HERD 原文 Figure 1。*
+
 ## 一个 stage 的完整流程
 
 第 `t` 阶段从上一模型 `θ_(t-1)` 和 harness `H_(t-1)` 开始。HERD 的 harness 不只有 skill：`H_t = (K_t, R_t)`，其中 `K_t` 是可路由的 skill registry，`R_t` 是有容量上限的 high-residual memory。
@@ -26,12 +30,12 @@ Teacher `p_H` 是冻结的 `θ_(t-1)`，看到 routed skill `K_t(x)`、prompt，
 D_{\mathrm{KL}}\left(p_k^H \parallel p_k^S\right)
 ```
 
-这里的 verified answer `y*` 是数据集提供、经过验证的正确目标，不是 student rollout 出来的答案。Verified-answer prefix `y*_<k` 表示正确答案在第 `k` 个 token 之前的部分。训练第 `k` 个位置时，teacher 和 student 都沿着这条正确前缀计算下一 token 的全词表分布：
+这里的 verified answer `y*` 是数据集提供、经过验证的正确目标，不是 student rollout 出来的答案。Verified-answer prefix `y*_(1:k-1)` 表示正确答案在第 `k` 个 token 之前的部分。训练第 `k` 个位置时，teacher 和 student 都沿着这条正确前缀计算下一 token 的全词表分布：
 
 ```math
-p_k^H = p_H(\cdot \mid K_t(x),x,y^*,y^*_{<k}),
+p_k^H = p_H(\cdot \mid K_t(x),x,y^*,y^*_{1:k-1}),
 \qquad
-p_k^S = p_S(\cdot \mid x,y^*_{<k})
+p_k^S = p_S(\cdot \mid x,y^*_{1:k-1})
 ```
 
 例如正确答案是 `B Thanks, Trudy`，训练过程依次比较空前缀后对 `B` 的分布、正确前缀 `B` 后对 `Thanks` 的分布，再比较 `B Thanks` 后的分布。Teacher 还通过 privileged context 看到 skill 和完整 verified answer；student 只看 bare prompt 与当前正确前缀。给 student 正确前缀只是训练时的 teacher forcing，部署推理时它不会获得 `y*`。
