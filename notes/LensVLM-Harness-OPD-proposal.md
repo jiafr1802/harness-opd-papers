@@ -16,6 +16,26 @@
 
 LensVLM renders a long document into multiple compressed page images. A VLM receives the question and the compressed page overview; it predicts which page might contain useful evidence, requests expansion, and continues reasoning with a returned higher-fidelity representation.
 
+### Visual overview: selective expansion
+
+```mermaid
+flowchart TD
+    A["Question + compressed page images<br/>Page 1 … Page K"] --> B["VLM: locate likely evidence page"]
+    B --> C["expand(page = k)"]
+    C --> D{"Expansion modality"}
+    D --> E["Original page text"]
+    D --> F["OCR text"]
+    D --> G["High-resolution image"]
+    E --> H["Reason with expanded evidence"]
+    F --> H
+    G --> H
+    H --> I{"Enough evidence?"}
+    I -- "No" --> B
+    I -- "Yes" --> J["Final answer"]
+```
+
+> In the original-text mode, the external tool accesses a retained source document; the VLM does not reconstruct invisible text from the compressed pixels. Diagram is conceptual, not an exact implementation call graph.
+
 Conceptual loop:
 
 ```text
@@ -65,13 +85,33 @@ Potential advantages: interpretable selection actions, explicit tool budget, rec
 
 Define `V` = compressed images, `q` = question, `h` = teacher-only harness observations, and `y_<t` = prefix from the *student's own rollout*. A conceptual token-level objective is
 
-```math
-L_OPD = E_(V,q,y~pi_S) [ sum_t KL( pi_T(. | V,q,h,y_<t) || pi_S(. | V,q,y_<t) ) ]
-```
+$
+\mathcal{L}_{\mathrm{OPD}} = \mathbb{E}_{(V,q)\sim\mathcal{D},\; y\sim\pi_S(\cdot\mid V,q)}\left[\sum_{t=1}^{|y|}\mathrm{KL}\!\left(\pi_T(\cdot\mid V,q,h,y_{<t})\;\|\;\pi_S(\cdot\mid V,q,y_{<t})\right)\right]
+$
 
 This is an illustrative forward-KL design, **not** a claim that all OPD methods use this KL direction. In practice, teacher and student must be evaluated on **matched output-token prefixes**; tool-call tokens and raw tool responses are not student targets. An alternative is action-level supervision or outcome-guided distillation if tokenizer/model interfaces differ.
 
 **Central research question:** Is an evidence-selection-and-verification *process* a more transferable teacher advantage than unrestricted access to the entire original text?
+
+### Visual overview: teacher-only harness distillation
+
+```mermaid
+flowchart TD
+    Q["Question + compressed images (V, q)"] --> S["Student rollout: y ~ pi_S"]
+    Q --> T["Teacher + Harness controller"]
+    X[("Retained original document / OCR / HD pages")] --> H["Locate → Expand → Verify"]
+    T --> H
+    H --> O["Teacher-only evidence h"]
+    S --> P["Student output prefixes y_<t"]
+    P --> KD["Token-level policy distillation<br/>on matched student prefixes"]
+    O --> TS["Teacher token distribution<br/>pi_T(. | V, q, h, y_<t)"]
+    P --> TS
+    TS --> KD
+    KD --> U["Update student pi_S"]
+    U --> V["Evaluation: compressed images only<br/>NO harness / source text"]
+```
+
+**Access boundary:** Only the teacher/controller can query the original-document store. The student receives no expanded evidence, OCR, source text, or tool-call trajectory as an input.
 
 ### Training workflow
 
