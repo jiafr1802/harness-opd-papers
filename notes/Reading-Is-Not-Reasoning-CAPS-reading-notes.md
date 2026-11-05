@@ -14,15 +14,52 @@ CAPS（Cross-modal Agentic Policy Self-distillation）用同一模型的 text-hi
 
 同一个 interaction history 可以表示为文本 token，也可以通过确定性 renderer 变成页面图像。两种输入包含相同 observation/action 内容，模型架构和 action space 也相同；唯一变化是历史模态。
 
-作者从三层诊断差距：
+论文没有明确提出名为“三层诊断”的框架，但第 3 节 *Diagnosing the Visual-History Policy Gap* 按“历史恢复 → 单步决策 → 完整轨迹”从局部到整体推进，可以理解为三层诊断。它要区分两种解释：一是图片中的文字难以恢复，即感知/OCR 问题；二是文字虽然可读，模型却不能像处理 text history 那样利用它做决策，即策略问题。
 
-1. **History recovery**：从真实 trajectory 构造 4,000 个 History QA，只要求定位并提取历史中的 query、document title、keyword 或 year。
-2. **Matched-state decision**：在完全相同的语义状态上，只替换 text/image history，比较下一 action。
-3. **Full trajectory quality**：比较 evidence uptake、entity/relation tracking、query progression、stopping calibration、answer grounding。
+### 第一层：History Recovery——历史读得准不准
 
-关键结果是：GRPO 将 7B visual agent 的 SearchQA EM 从 14.0 提升到 40.1，但 image History QA 反而从 82.78 降到 78.22。性能提升不是因为 OCR 变好。
+**做法。** 作者基于 SearchQA 的真实 AgentOCR trajectories 构造 4,000 道平衡的 visual History QA。问题只要求定位和提取历史中明确出现的信息，例如最近一次 query、retrieved document title、keyword 是否出现或某个 year，不要求多步规划和 action selection。因此这层主要测 visual localization 与 text extraction。
 
-在 matched states 上，29.13% 的 action type 不一致；两边都选择 Search 时，只有 5.22% 的 query 高度匹配；AgentOCR 在第一次 retrieval 后立即回答的比例为 55.41%，text policy 仅为 29.80%。视觉 policy 更容易提前停止，也更难形成连续搜索策略。
+**关键结果（7B）。** GRPO 将 SearchQA EM 从 14.0% 提升到 40.1%，增加 26.1 个百分点；同期 image-input History QA 却从 82.78% 降至 78.22%。同一历史以纯文本输入时约为 90%（90.03% → 89.78%），训练前后基本不变。
+
+**解读。** Agent 的任务能力大幅提升时，visual history 的文字恢复能力没有同步提高，甚至略有下降。因此 GRPO 的主要收益不能解释为 OCR 变强，history recovery 也不是唯一或主要瓶颈。这里证明的是“任务增益与通用读取分数脱钩”，而不是证明视觉读取已经完美。
+
+### 第二层：Matched-State Decision——相同信息会不会产生相同动作
+
+**做法。** 作者从 text-history policy 的真实 SearchQA trajectories 中抽取 10,000 个 decision prefixes。两种 policy 接收相同 question、actions、observations 和语义历史，只改变历史表示：一边输入 text history，另一边输入其 rendered image，然后比较下一步决策。这一控制变量设计避免把“先前走了不同轨迹”误当成当前模态造成的差异。
+
+**关键结果（AgentOCR vs. text policy）。** 29.13% 的状态上，两者下一步 action type（Search 或 Answer）不一致。在 initial retrieval 后的第一次决策中，AgentOCR 有 55.41% 直接 Answer，text policy 只有 29.80%。当两边都选择 Search 时，query token Jaccard similarity 不低于 0.8 的比例仅为 5.22%。
+
+**解读。** 即使可用信息完全相同，仅改变呈现形式也会改变“是否继续搜索、何时停止、接下来搜什么”。Visual policy 更容易过早作答，query progression 也与 text policy 显著不同。这比 History QA 更接近 agent 的核心能力：问题不只是能否复述历史，而是能否把历史转化为下一步 action。
+
+### 第三层：Full-Trajectory Quality——单步偏差是否形成系统性质量差距
+
+**做法。** 作者从 SearchQA validation trajectories 中分层抽样 2,800 个实例，获得 2,795 个有效的 DeepSeek-V4-Flash 盲评结果。完整轨迹被匿名化，评审看不到 policy 名称、history modality 和最终答案是否正确，并按 0–2 分评价五个维度。作者使用 inverse-probability weighting 校正分层抽样带来的分布偏差。
+
+| 轨迹维度 | Text policy | Visual policy |
+| --- | ---: | ---: |
+| Evidence uptake | 1.330 | 1.109 |
+| Entity/relation tracking | 1.408 | 1.181 |
+| Query progression | 1.232 | 1.131 |
+| Stopping calibration | 1.075 | 1.008 |
+| Answer grounding | 1.259 | 1.080 |
+
+**解读。** Text-history policy 在五个维度上全部领先，差距方向一致；evidence uptake、entity/relation tracking 和 answer grounding 的差距最大，query progression 与 stopping calibration 的差距较小。第二层发现的局部决策偏移会改变后续 observation，并在完整 rollout 中累积为证据使用、实体追踪和最终答案落地的系统性劣化。
+
+### 三层证据如何合起来
+
+1. History QA 表明任务提升并不依赖更强的通用文字恢复能力。
+2. Matched states 表明在相同语义信息下，history modality 本身会改变下一步 policy。
+3. Full trajectories 表明这种行为差异并非任意风格差异，而是稳定地对应较低的轨迹质量。
+
+因此论文把问题归纳为 **agentic policy gap**，而不只是 OCR/perception gap。这也直接引出 CAPS：既然同一模型体系的 text-history policy 更强，就用它作为 Teacher，将搜索、证据使用与停止行为蒸馏给 visual-history policy。
+
+### 批判性边界
+
+- **第一层是间接论证。** 通用 History QA 没有提高，不等于所有 task-relevant reading 都没有改善。论文 §5.4 还报告 CAPS 的 History QA 为 73.70，低于 AgentOCR 的 78.22，并将其解释为模型向策略任务特化；这是合理解释，但不是直接证明。
+- **Matched prefixes 来自 text policy。** 这些状态对 visual policy 可能部分属于分布外输入，因此 29.13% 的不一致不一定全部由模态表示本身造成。
+- **动作不一致不等于动作更差。** 不同的 Search query 或停止时机可能同样有效；第二层只能证明 policy 不同，第三层的轨迹评分和最终任务结果才支撑“visual policy 更差”。
+- **轨迹质量依赖 LLM judge。** 论文使用盲评和 inverse-probability weighting 降低偏差，但没有人工评估；五个维度的均值差约为 0.07–0.23，仍应结合不确定性与最终成功率理解。
 
 ## 问题形式化
 
