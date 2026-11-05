@@ -1,0 +1,28 @@
+name: Import CAPS arXiv paper (one-time)
+on:
+  push:
+    paths:
+      - '.github/workflows/import-caps-paper.yml'
+permissions:
+  contents: write
+jobs:
+  import-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download and verify official arXiv PDF
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120             https://arxiv.org/pdf/2608.08960v2 -o "CAPS-Reading-is-not-Reasoning.pdf"
+          test "$(head -c 4 CAPS-Reading-is-not-Reasoning.pdf)" = '%PDF'
+          test "$(stat -c%s CAPS-Reading-is-not-Reasoning.pdf)" -gt 100000
+      - name: Commit PDF and remove one-time importer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CAPS-Reading-is-not-Reasoning.pdf
+          git rm .github/workflows/import-caps-paper.yml
+          git commit -m "papers: add CAPS Reading is not Reasoning PDF (arXiv 2608.08960v2)"
+          git push origin HEAD:main
