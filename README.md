@@ -27,3 +27,4 @@
 - [GUI-HARVEST 阅读笔记](notes/GUI-HARVEST-reading-notes.md)：重复 GUI 证据、跨任务行为模式、harness 源码修改和双门验证。
 - [VPD 阅读笔记](notes/VPD-reading-notes.md)：稀疏奖励瓶颈、Variational EM、teacher refinement、student distillation 与语言反馈边界。
 - [LensVLM → Harness-Augmented OPD Research Proposal](notes/LensVLM-Harness-OPD-proposal.md)：将压缩视觉上下文的按需展开改造成 Teacher-only Harness，提出无工具 Student 的 OPD 训练方法、对照实验、评测指标及信息丢失边界。
+- [LensVLM Harness-OPD 研究计划（中文版）](notes/LensVLM-Harness-OPD-proposal-zh.md)：中文完整研究方案，包含两张工作流图、OPD 公式、实验矩阵、消融、评测及分阶段实施方案。
