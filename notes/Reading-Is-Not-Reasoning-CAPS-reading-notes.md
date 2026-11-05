@@ -58,6 +58,30 @@ x_t^I=(I,I_t)
 
 Visual student 对完整 response 做 next-token SFT，因此同时学习 reasoning 与 action。这个阶段提供稳定初始化，但只覆盖 text teacher 访问过的成功状态。
 
+#### NLL 是什么？这一阶段为何叫 Self-Distillation？
+
+Next-token NLL 是 negative log-likelihood，即对 Teacher response 做标准 teacher-forcing cross-entropy：
+
+```math
+\mathcal L_{\mathrm{off}}
+=-\frac{1}{|y^T|}\sum_k
+\log \pi_\theta^I(y_k^T\mid I,I_t,y_{1:k-1}^T)
+```
+
+Student 给目标 token 的概率越高，NLL 越小。因此这一阶段的**优化形式就是 SFT**：不读取 Teacher logits，也不计算师生 KL，而是把成功 Teacher sequence 当 hard label。
+
+这里有一个重要术语边界。Text Teacher 已经经过 text-history GRPO，Visual Student 则是随后训练的 target checkpoint；二者当前权重不同，输入模态也不同。因此如果把 self-distillation 严格限定为“同一时刻、同一组权重的两个 context view”，CAPS offline 阶段并不完全符合。
+
+论文采用的是更宽泛的 self-distillation：Teacher 与 Student 来自同一个 Qwen2.5-VL base，架构、规模、tokenizer 和 action space 相同，没有额外更大的外部 Teacher；更强监督来自模型自身在 text interface 下训练出的 policy。更精确的表述应是：
+
+```text
+GRPO-trained text checkpoint
+→ visual checkpoint 的 cross-modal sequence-level distillation
+→ 优化上表现为 Teacher-generated synthetic trajectory SFT
+```
+
+所以“self”强调同源模型体系，“distillation”强调把 text policy 的能力迁移到 visual policy，“SFT/NLL”描述实际 loss；三者不是同一维度。
+
 ### Stage 2：Visual-History GRPO + Online Distillation
 
 Visual student 随后在图像历史界面中自主 rollout，使用环境 return 做 GRPO。这样优化真实部署分布，但 sparse reward 不能为每个 token 提供明确的策略修正。
