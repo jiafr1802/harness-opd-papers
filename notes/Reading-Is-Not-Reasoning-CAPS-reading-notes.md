@@ -83,7 +83,7 @@ x_t^I=(I,I_t)
 
 ### Stage 1：Offline Trajectory Self-Distillation
 
-作者先训练一个 text-history GRPO policy，并收集其交互 trajectories。只保留完成任务、action 可解析、response 未截断的成功轨迹；同一任务有多个轨迹时，优先选择步数少、重复 action 少、response 和 context 更短的一个。
+作者先训练一个 text-history GRPO policy，并收集其交互 trajectories。只保留完成任务、action 可解析、response 未截断的成功轨迹；同一任务有多个轨迹时，依次优先选择交互步数更少、重复搜索更少、response tokens 更少、prompt tokens 更少的轨迹，最后优先较晚的 Teacher training step。
 
 对每个决策 step，instruction、interaction content 和完整 teacher response 都不变，只把 history 从 text `h_t` 替换成其 rendered image `I_t`：
 
@@ -118,6 +118,21 @@ GRPO-trained text checkpoint
 ```
 
 所以“self”强调同源模型体系，“distillation”强调把 text policy 的能力迁移到 visual policy，“SFT/NLL”描述实际 loss；三者不是同一维度。
+
+#### 两个阶段使用的是同一个 Teacher 吗？
+
+在论文的方法定义层面，答案是**同一个 source-policy 训练线**。§4.1 只定义一个 frozen text-history source policy `π_φ^T`；§4.2 先用 GRPO 训练 text-history agent，并把这条训练线产生的成功 trajectories 用于 offline distillation；§5.1 也只列出一个 size-matched `Text + GRPO (Qwen2.5-VL)` Teacher，表 1–2 将其标为 CAPS source policy。论文没有为两个阶段另外训练两名不同 Teacher。
+
+但两阶段使用 Teacher 的接口不同：
+
+| 阶段 | Teacher 提供什么 | Student 如何学习 |
+| --- | --- | --- |
+| Offline trajectory self-distillation | Teacher 已采样出的成功完整 response（reasoning + action） | 把 history 渲染成图像，对具体 token sequence 做 next-token SFT/NLL；不读取 Teacher logits |
+| Online policy self-distillation | 在 student-visited state 和 student-generated prefix 上的全词表 next-token distribution | 用 teacher-to-student forward KL 对齐软分布；Teacher 不独立 rollout 或执行 action |
+
+还有一个 checkpoint-level 边界。附录 A.1 明确说 offline SFT 使用的是 **text-history policy 训练过程中保存的实际 rollouts**；SearchQA 读取 training step 50 及之后的数据，再按成功、action 合法、连续 step、最多四步、单次 response 不超过 511 tokens 等条件过滤，每道题只保留一条。它没有说这些轨迹由最终 frozen Teacher checkpoint 重新 rollout 得到。
+
+因此最严谨的说法是：两个阶段共享同一个 Text + GRPO source-policy lineage；offline 阶段消费这次 Teacher 训练过程中采样并保存的 hard-label trajectories，online 阶段则调用 frozen source checkpoint 产生 soft logits。论文没有报告中间 rollout checkpoint 与最终 frozen checkpoint 的行为差异，所以不能进一步断言每条 offline trajectory 都来自 online 阶段那个精确参数快照。
 
 ### Stage 2：Visual-History GRPO + Online Distillation
 
