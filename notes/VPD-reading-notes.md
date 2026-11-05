@@ -14,7 +14,7 @@ KL-regularized RL 的理论最优策略是 reward-tilted distribution：
 \pi^*(y\mid x)
 \propto
 \pi_{\mathrm{ref}}(y\mid x)
-\exp\left(\frac{r(x,y)}{\beta}\right)
+\exp\bigl(r(x,y)/\beta\bigr)
 ```
 
 它提高高奖励 response 的概率，但 partition function 无法直接计算。标准 RL 用 policy gradient 绕过归一化常数，却重新落回稀疏 reward 的采样问题。
@@ -62,11 +62,11 @@ Teacher 更新后，VPD 在 student 自己的 on-policy rollout prefix 上最小
 ```math
 \mathcal L_{\mathrm{M}}
 =\mathbb E_{x,y\sim\pi_\theta}
-\sum_t D_{\mathrm{KL}}\left(
+\sum_t D_{\mathrm{KL}}\bigl(
 \pi_\theta(\cdot\mid x,y_{1:t-1})
-\parallel
-\operatorname{sg}[q_\phi(\cdot\mid x,C,y_{1:t-1})]
-\right)
+\Vert
+\mathrm{sg}[q_\phi(\cdot\mid x,C,y_{1:t-1})]
+\bigr)
 ```
 
 Student 推理时不需要反馈，但训练时吸收了 teacher 从反馈中提炼出的 token-level correction。动态 reference prior 保证 teacher 留在 student 附近，使 M-step 比从一个过强、分布断裂的 oracle 蒸馏更稳定。
