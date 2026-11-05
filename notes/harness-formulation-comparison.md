@@ -4,7 +4,7 @@
 
 这几篇论文中的 **harness 不是同一个严格定义的数学对象**，而是同一类模型外部机制的不同实例：它在不直接改变 backbone 参数的前提下，读取任务、交互历史、外部信息或执行证据，并通过附加上下文、组织多次模型调用、维护记忆或控制 agent runtime 来改变模型的行为。
 
-HAD、OPHSD、HERD 和 GUI-HARVEST 分别强调 harness 的四个层次：**文本状态提示、推理编排程序、有限容量外部记忆、完整可执行 agent runtime**。因此，讨论“蒸馏 harness”时必须说明被迁移的是哪一层，以及部署时 harness 是否仍然存在。
+HAD、OPHSD、HERD 和 GUI-HARVEST 分别强调 harness 的四个层次：**文本状态提示、推理编排程序、有限容量外部记忆、完整可执行 agent runtime**。新加入的 HPD 进一步把 runtime state、serializer、transition 与 termination semantics 显式化。讨论“蒸馏 harness”时必须说明被迁移的是哪一层，以及部署时 harness 是否仍然存在。
 
 ## 跨论文统一抽象
 
@@ -434,6 +434,7 @@ flowchart LR
 | HAD | 状态跟踪与行为监控产生的文本 | 否，人工固定 | 是 | 保留 |
 | OPHSD | 多次模型调用、状态转移和 readout 组成的推理程序 | 否，任务特定固定程序 | 是 | 移除 |
 | HERD | `H_t=(K_t,R_t)`：skill registry + residual memory | 是，每 stage 演化 | 是，每 stage 蒸馏 | 移除 |
+| HPD | runtime control state、control document 与 harness-verified action | 否，目标 runtime 固定 | 是 | 保留原 harness interface，移除 privileged control document |
 | GUI-HARVEST | prompt、memory、tools、控制流、验证和恢复组成的 runtime 源码 | 是，证据驱动 patch | 否，backbone 冻结 | 保留优化后的版本 |
 
 从窄到宽，可以把四篇的对象关系概括为：
@@ -447,6 +448,131 @@ HERD 位于另一条轴上：它重点规定 harness 中“可积累的外部知
 ```
 
 这个包含关系只描述**系统能力范围**，不表示后一篇的方法或目标优于前一篇。
+
+## LensVLM 与 PRISM Proposal 能否套进这个框架？
+
+对应提案：[LensVLM Harness-OPD](LensVLM-Harness-OPD-proposal-zh.md) · [PRISM Transferability-Aware Harness Distillation](PRISM-transferability-aware-harness-distillation-proposal-zh.md)
+
+### 结论：执行框架能套，但训练抽象需要增加“可见性视图”
+
+前面的 `state/store → renderer → model → controller/interfaces` 足以描述 LensVLM 的运行时 Harness，却不足以完整描述 Teacher-only Harness distillation。原因是同一个 harness state 会被渲染成两个不同可见视图：Teacher 能看到展开证据，Student 只能看到固定预算压缩图像。
+
+因此对蒸馏任务，应把统一抽象扩展为：
+
+```text
+H = (S, R, C, I)
+
+S: state/store       文档索引、压缩页、原文、展开历史、预算
+R: renderer          分别构造 Teacher view 与 Student view
+C: controller        选择页面、展开模态、验证、继续或停止
+I: interfaces        read_page / OCR / zoom / original_text
+```
+
+再显式加入训练视图：
+
+```math
+v_T = R_T(S,x,e),
+\qquad
+v_S = R_S(S,x),
+\qquad
+\mathcal L = \sum_t w_t D\bigl(
+p_S(\cdot\mid v_S,y_{1:t-1})
+\,\Vert\,
+p_T(\cdot\mid v_T,y_{1:t-1})
+\bigr).
+```
+
+这里 `R_T` 可以渲染原文/OCR/高清页，`R_S` 严格只渲染压缩图像；`w_t` 在普通 Harness-OPD 中可以全为 1，在 PRISM 中则由 transferability estimator 决定。这个 visibility map 是原统一抽象缺失、但两个 proposal 最需要明确的部分。
+
+```mermaid
+flowchart LR
+  Q[question + compressed pages] --> S[(document / tool state)]
+  RAW[original text / OCR / HD pages] --> S
+  S --> RT[Teacher renderer R_T]
+  S --> RS[Student renderer R_S]
+  CTRL[locate / expand / verify controller] --> S
+  RT --> TV[privileged Teacher view]
+  RS --> SV[compressed-only Student view]
+  SV --> Y[Student on-policy prefix]
+  TV --> PT[Teacher logits on matched prefix]
+  Y --> PS[Student logits on same prefix]
+  PT --> G[transferability gate w_t]
+  PS --> G
+  G --> LOSS[weighted OPD update]
+```
+
+### LensVLM Proposal 的对应关系
+
+LensVLM Proposal 中的 **Direction A: Inference-time Harness** 完全符合运行时抽象：
+
+| 统一组件 | Proposal 中的实例 |
+| --- | --- |
+| `S` | 压缩页、页码/文档索引、原文或高清资产、展开历史、预算 |
+| `R` | 把问题、压缩页和已展开证据组成 VLM messages |
+| `C` | locate → expand → verify → replan/stop |
+| `I` | `select_page`、`read_original_text`、`ocr_page`、`zoom_page` |
+
+这一路线部署时保留 Harness，本质上更接近完整工具增强 agent。
+
+**Direction B: Teacher-only Harness → Tool-free Student** 则属于 OPHSD 一类的 privileged-harness internalization：Teacher 使用完整 `H=(S,R_T,C,I)`，Student 只使用 `R_S`。现有 proposal 中“Teacher 私有原文/工具结果不进入 Student 输入，工具调用 token 不作为无工具 Student target”的约束是正确的。
+
+需要进一步收紧的地方有三点：
+
+1. **Harness trace 与 Student target 分离。** `select_page/read_page` 属于 controller/interface trace；若部署时无工具，不能把这些 token 当主生成目标。可以把 page ID 作为辅助 probe/head，但必须和部署 action 区分。
+2. **Teacher evidence 只做 conditioning。** 推荐沿 OPHSD 的 paired-batch 形式：`teacher prompt = expanded evidence + same student response`，`student prompt = compressed pages + same response`，只在共享 response token 上比较分布。
+3. **信息边界写进数据协议。** 原文资产属于 `S.private`，Student renderer 必须在训练和测试都无法读取；随机数字/实体反事实要按文档级拆分，避免参数记忆伪装成视觉恢复。
+
+所以 LensVLM Proposal **能套进框架，而且框架能暴露其关键风险**：真正待蒸馏的不是 `read_page` 工具本身，而是 privileged evidence 对 Student 可见线索使用方式的影响。
+
+### PRISM 在框架中的位置
+
+PRISM 不是第五种 runtime harness。它是一个位于 `Teacher view / Student view → distillation loss` 之间的**监督选择层**：
+
+```text
+runtime Harness H 产生 h+ / h- / no-harness 三种 Teacher view
+          ↓
+CEI 估计 evidence dependence
+SOAE 估计 Student-observable support
+          ↓
+transferability gate w_t
+          ↓
+token KL / action matching / sample filtering
+```
+
+对应统一组件：
+
+- **CEI** 干预的是 `S.private` 中的证据和 `R_T` 的渲染结果，比较 `p0 / p+ / p-`；
+- **SOAE** 只读取 `R_S` 产生的 Student-visible input，估计指导内容是否有可观察依据；
+- **Transferability-Gated OPD** 不改变 Harness 执行，而是改变哪些 token/action supervision 进入 loss；
+- **Distillation-Aware Harness Optimization** 才会进一步选择或更新 `C/I`，例如在 full text、OCR、HD zoom、select–verify 之间路由。
+
+因此 P0/P1 的 PRISM 可以在**固定 Harness**上完成，不需要一开始做 harness evolution。只有 P2 才进入 HERD/GUI-HARVEST 类似的“更新 Harness”问题，但优化目标不同：不是 Teacher utility 或带 Harness agent score，而是一次 Student update 后的 tool-free held-out utility。
+
+### HPD 对两个 Proposal 的补充
+
+HPD 将 runtime harness 更严格地写成 serializer `Ω_H` 与 transition kernel `T_H`：完整 state 包含执行历史、权限、调度、obligation bookkeeping、剩余预算和 termination condition；native context 是 `x_b = Ω_H(s_b)`，action 经 `T_H` 解析、权限检查、工具执行、observation 插入后进入下一 boundary。
+
+这个视角对 LensVLM/PRISM 有两个直接帮助：
+
+1. 把“是否允许继续展开、哪些页面已读、预算是否耗尽、何时可以回答”写成显式 control state，而不是散落在 prompt 中；
+2. 区分 **runtime semantics** 与 **privileged factual evidence**：前者如剩余预算、合法 action、停止条件，通常可作为 control document 监督；后者如某页随机数字，若 Student 看不到则仍不可蒸馏。
+
+HPD 的三视图也可作为 proposal baseline：`RUNTIME` 从 native history 重建 control document，`INJECTED` 在 control document 下预测 verified action，`HARNESS-REPLAY` 从 native context 直接预测同一 action。PRISM 的新增价值应放在：即使 action 被 harness 验证为合法，仍要判断其中依赖的事实是否被 Student input 支持。
+
+### 最终判断
+
+| 设计 | 是否符合统一框架 | 需要的修正/扩展 |
+| --- | --- | --- |
+| LensVLM Direction A | 完全符合 runtime harness | 明确 `S/R/C/I` 与部署成本 |
+| LensVLM Direction B | 符合 privileged-harness distillation | 增加 Teacher/Student visibility map、trace mask、信息隔离 |
+| PRISM CEI/SOAE/Gating | 符合训练层扩展 | 明确它不是 harness 本体，而是监督归因与选择层 |
+| PRISM Harness Optimization | 符合 controller/interface optimization | 目标必须是 tool-free Student utility，而非 Teacher utility |
+
+你们想做的方向可以套入该框架，而且套入后研究问题更清楚：
+
+> 给定同一个外部 Harness state，Teacher renderer 能看到的 privileged evidence 中，哪些行为差异能由 Student renderer 的有限观察支持，并值得进入 distillation loss？
+
+这个表述把 OPHSD 的“procedure vs dynamic content”边界、HAD 的 harness-induced action contrast、ActionOPD 的 semantic decision supervision、HPD 的 runtime-control semantics 和 PRISM 的 transferability gate 放进同一坐标系，同时避免把它们简单拼接成一个过大的系统。
 
 ## 使用术语时的建议
 
