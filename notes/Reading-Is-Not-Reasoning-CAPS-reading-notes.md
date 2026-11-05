@@ -147,13 +147,44 @@ Online loss 使用 teacher-to-student forward KL，并逐 position clip，避免
 \mathcal L=\mathcal L_{\mathrm{GRPO}}+\lambda\mathcal L_{\mathrm{online}}
 ```
 
-GRPO 保留环境 reward 作为主信号；online distillation 在 visual student 自己访问的状态上提供 dense policy guidance。
+GRPO 保留环境 reward 作为主信号；online distillation 在 visual student 自己访问的状态上提供 dense policy guidance。论文将 online distillation 明确描述为 “an auxiliary objective during GRPO”。其权重较小：SearchQA 使用 `λ=0.05`，ALFWorld 使用 `λ=0.01`；两者的 per-token KL clip `τ` 都是 `0.05`。
+
+#### 为什么 GRPO 不是第三个阶段？
+
+这里必须区分 **training stage** 与 **loss term**。CAPS 的阶段一是独立的 offline trajectory self-distillation：用 text policy 的成功轨迹做 SFT（原文 Eq. 8），得到 visual policy 的初始化 checkpoint。阶段二才是 online training，其中 GRPO 与 online policy self-distillation 同时优化（原文 Eq. 14），并非先完成一次 GRPO、再启动一次 OPD。
+
+第二阶段共享同一批 student rollout：visual student 在 image history 下采样 trajectories；环境结果用于计算 GRPO reward/advantages；系统同时保留由这些 student actions 与 observations 形成的 canonical text history，再让 frozen text teacher 对同一 student response prefix 计算 full-vocabulary logits，得到 forward-KL loss。因此数据流是：
+
+```text
+Offline visual-history SFT checkpoint
+                    ↓
+Visual student rollout ──→ environment reward ──→ GRPO loss
+                    └────→ paired text history ─→ Teacher logits ─→ online KL
+                                                        ↓
+                                             joint update of Student
+```
+
+如果把前置的 source-policy preparation 也算进去，完整工程流水线可以写成 “text-history GRPO Teacher → offline visual SFT → online GRPO + KL”。但论文所说的“两阶段 CAPS”是在数两个 student distillation/training stages，不是在枚举整个项目里出现过多少次优化。
 
 ## 为什么必须两阶段
 
 只做 offline distillation 会遇到 state-distribution mismatch：visual student 一旦执行不同 action，就进入 text teacher 成功轨迹没有覆盖的状态。
 
-只做 online distillation 则缺少稳定的视觉策略初始化，student rollout 质量较低。SearchQA 消融中，两者单独使用均有效，但组合后的 CAPS 最好，说明 offline successful behavior 与 online student-state correction 互补。
+只做 online distillation 则缺少稳定的视觉策略初始化，student rollout 质量较低。SearchQA Table 3 的拆分正好验证这一结构：
+
+| Variant | 3B Avg. EM | 7B Avg. EM | 含义 |
+| --- | ---: | ---: | --- |
+| `Off-SD → GRPO` | 37.4 | 42.9 | 阶段一完成后，阶段二只做普通 GRPO |
+| `GRPO + On-SD` | 37.1 | 41.4 | 没有 offline 初始化，直接联合 GRPO 与 online distillation |
+| Full CAPS | 39.2 | 43.5 | offline SFT 初始化后，再联合优化 GRPO 与 online distillation |
+
+两种单独组件都有效，完整 CAPS 最好，说明 offline successful behavior 与 online student-state correction 互补。
+
+#### OPD、On-SD 与 self-distillation 的术语边界
+
+本文相关工作把 OPD 用作 on-policy distillation 的一般类别；方法部分更具体地称自己的在线目标为 **online policy self-distillation（On-SD）**，并引用 Zhao et al. (2026) 的 OPSD。这里的 “online/on-policy” 指 Teacher 在 visual student 自己访问的 states 和 student-generated prefixes 上提供分布监督。
+
+“Self” 则表示 Teacher 与 Student 来自同一个底座模型体系，使用相同规模、架构、tokenizer 与 action space，没有引入更大的外部 Teacher；主要能力差来自 text-history 与 image-history interface。它不应被理解为二者在训练时共享同一组可变参数：online 阶段的 text Teacher 是 frozen source checkpoint，visual Student 是被更新的 target checkpoint。
 
 ## Benchmark 与结果
 
