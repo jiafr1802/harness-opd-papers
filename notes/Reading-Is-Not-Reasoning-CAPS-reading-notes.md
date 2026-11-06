@@ -185,15 +185,7 @@ Visual student rollout ──→ environment reward ──→ GRPO loss
 
 只做 offline distillation 会遇到 state-distribution mismatch：visual student 一旦执行不同 action，就进入 text teacher 成功轨迹没有覆盖的状态。
 
-只做 online distillation 则缺少稳定的视觉策略初始化，student rollout 质量较低。SearchQA Table 3 的拆分正好验证这一结构：
-
-| Variant | 3B Avg. EM | 7B Avg. EM | 含义 |
-| --- | ---: | ---: | --- |
-| `Off-SD → GRPO` | 37.4 | 42.9 | 阶段一完成后，阶段二只做普通 GRPO |
-| `GRPO + On-SD` | 37.1 | 41.4 | 没有 offline 初始化，直接联合 GRPO 与 online distillation |
-| Full CAPS | 39.2 | 43.5 | offline SFT 初始化后，再联合优化 GRPO 与 online distillation |
-
-两种单独组件都有效，完整 CAPS 最好，说明 offline successful behavior 与 online student-state correction 互补。
+只做 online distillation 则缺少稳定的视觉策略初始化，student rollout 质量较低。SearchQA Table 3 的拆分显示：`Off-SD → GRPO` 达到 37.4/42.9，`GRPO + On-SD` 达到 37.1/41.4，完整 CAPS 达到 39.2/43.5（3B/7B Avg. EM）。两种单独组件都有效，完整 CAPS 最好，说明 offline successful behavior 与 online student-state correction 互补。完整表格和更严格的实验设计评论见后文。
 
 #### OPD、On-SD 与 self-distillation 的术语边界
 
@@ -205,11 +197,78 @@ Visual student rollout ──→ environment reward ──→ GRPO loss
 
 **SearchQA** 包含 NQ、TriviaQA、PopQA、HotpotQA、2Wiki、MuSiQue、Bamboogle；NQ 和 HotpotQA 用于训练，其余用于 OOD generalization。Agent 最多交互四步，每次搜索返回 top-3 passages。
 
+![论文 Table 1：SearchQA 主结果与 memory-context cost](../assets/caps-table-1.png)
+
+*图源：原文 Table 1。*
+
+SearchQA 上，3B/7B CAPS 相比 AgentOCR 分别提升 5.0/3.4 Avg. EM。7B CAPS 为 43.5，略高于 matched text-history Teacher 的 43.0；3B CAPS 为 39.2，仍低于 Teacher 的 41.7。SKILL0 因 Bamboogle 的异常高分而在 overall average 上更高，但 CAPS 在其余六个数据集上是最强 visual-history method。
+
 **ALFWorld** 包含六类长程家庭任务。主实验保留完整历史 `H=50`，同时报告短窗口 `H=2`。
+
+![论文 Table 2：ALFWorld 主结果与 memory-context cost](../assets/caps-table-2.png)
+
+*图源：原文 Table 2。*
 
 模型为 Qwen2.5-VL-3B/7B-Instruct，使用 size-matched text-history policy 作为 teacher。SearchQA 上 CAPS 相比 AgentOCR 提升 5.0 / 3.4 个百分点；full-history ALFWorld 提升 15.6 / 14.5 个百分点。
 
-7B CAPS 在 SearchQA 达到 43.5 average EM，略高于 text teacher 的 43.0；ALFWorld 达到 95.7%，高于 text teacher 的 92.6%。同时相对 matched text-history policy，平均/峰值 memory-context cost 最多降低 63.3% / 83.4%。
+ALFWorld `H=50` 下，3B/7B CAPS 达到 93.8%/95.7% success rate，分别超过 matched text-history Teacher 2.8/3.1 个百分点。`H=2` 可进一步降低 token cost，但 success rate 降至 74.6%/84.8%，说明极短历史窗口仍有明显性能代价。相对 matched text-history policy，CAPS 的平均/峰值 memory-context cost 最多降低 63.3%/83.4%。
+
+## 实验结果评论：Baseline 与消融是否充分？
+
+### 已覆盖的 Baseline
+
+主表覆盖了四类必要对照：`Text (w/o RL)` 测文本输入但不做 RL；`Text + GRPO` 测 text-history RL 上界，其中 Qwen2.5-VL 版本也是 CAPS Teacher；`OCR (w/o RL)` 测视觉历史但不做 RL；AgentOCR 与 SKILL0 则是 visual-history RL baselines。CAPS 因而同时回答了 text/image interface、with/without RL，以及相对已有 visual-history agents 的收益。
+
+但要注意，带 `†/‡` 的 AgentOCR、SKILL0 等数值来自已有工作，而不是全部在本文代码路径下重新训练。它们适合作为主结果参照，却不能完全替代同一随机种子、同一 rollout budget 下的内部消融。
+
+### 两阶段消融已经回答了什么
+
+![论文 Table 3：SearchQA 两阶段消融](../assets/caps-table-3.png)
+
+*图源：原文 Table 3。*
+
+Table 3 的三个核心比较是：
+
+- Full CAPS vs. `GRPO + On-SD`：加入 offline visual-history SFT 后，3B/7B 都提高 2.1 Avg. EM。
+- Full CAPS vs. `Off-SD → GRPO`：在相同 offline 初始化下增加 On-SD，3B 提高 1.8，7B 提高 0.6 Avg. EM。
+- `Text-Traj. SFT → GRPO` 只有 36.3/40.7，低于 visual-history Off-SD，说明 offline SFT 必须让 Student 在目标 image-history interface 下学习，而不只是复用成功文本轨迹。
+
+因此论文已经证明两个 distillation components 具有互补性。不过 Table 3 默认把 GRPO 固定为第二阶段底座，它做的是 **stage/component ablation**，不是完整的 **loss factorial ablation**。
+
+### 第二阶段仍缺少什么 Loss 对照
+
+最关键的缺失项是 `Off-SD → On-SD only`：Student 仍自主 rollout，Teacher 仍在 student prefixes 上提供 KL，但环境 reward 不进入梯度。它可以直接回答“第二阶段单靠 Teacher soft distribution 是否足够，还是必须依赖 GRPO reward”。论文没有报告这一行。
+
+更完整的设计应固定数据、初始化和训练预算，并比较：
+
+| Offline SFT | GRPO loss | On-SD loss | 解释 |
+| ---: | ---: | ---: | --- |
+| No | No | No | 未训练 visual base |
+| No | Yes | No | 同代码路径重跑的 plain visual GRPO |
+| Yes | No | No | 直接评测 offline SFT checkpoint |
+| Yes | Yes | No | 论文 `Off-SD → GRPO` |
+| No | Yes | Yes | 论文 `GRPO + On-SD` |
+| Yes | No | Yes | 缺失：无 reward 的纯 online distillation |
+| Yes | Yes | Yes | Full CAPS |
+
+其中 plain GRPO 虽可用主表 AgentOCR 近似，但 Table 3 没有同批次内部结果；`On-SD only` 和直接评测 offline checkpoint 则完全缺失。因此现有实验足以证明“在 GRPO 上增加两个蒸馏组件有效”，还不足以独立证明 GRPO loss 与 On-SD loss 各自不可替代。
+
+### Text Modality 是否也被充分评测
+
+论文并非只改变视觉输入：Table 1–2 同时报告 `Text (w/o RL)`、纯语言模型 `Text + GRPO (Qwen2.5)` 和尺寸匹配的 `Text + GRPO (Qwen2.5-VL)`；History QA 还比较了同一历史的 text/image 输入，text score 为 90.03 → 89.78；matched-state analysis 也直接比较 text 与 image history 下的下一 action。
+
+但这些 text results 来自独立的 text policy/Teacher。论文没有把**训练完成的同一个 CAPS Student checkpoint**切换为 text history 后重新评测，因此不能判断 visual alignment 是否保留、损害或提升了该 checkpoint 原有的 text-history 能力。`Text-Traj. SFT → GRPO` 只改变 offline SFT 的输入形式，也不等于完整的 text-trained/text-evaluated CAPS 对照。
+
+更严格的 modality control 应报告同架构、同 checkpoint 的 train/eval matrix：`Text→Text`、`Text→Image`、`Image→Image`、`Image→Text`。还应加入 text-to-text distillation placebo：保持相同 SFT、KL、rollout 和 Teacher-forward 预算，但 Teacher 与 Student 都看 text history，以区分跨模态对齐收益和单纯增加训练计算的收益。
+
+### 最值得补充的实验
+
+1. `Off-SD → On-SD only`，完成第二阶段 GRPO/KL 的 loss-level 析因。
+2. 直接评测 offline SFT checkpoint，并在 Table 3 内同配方重跑 plain GRPO。
+3. 对训练后的 CAPS checkpoint 做 text-history evaluation，报告完整 train/eval modality matrix。
+4. 比较 online forward KL、Teacher hard-response SFT/DAgger 与 action-token-only distillation，确认 full-vocabulary soft logits 的必要性。
+5. 使用 matched rollout/token/GPU budget，并报告多随机种子与置信区间；尤其 7B 中 On-SD 的 0.6 EM 增益需要方差支持。
+6. 对比训练过程中保存的 Teacher rollouts 与最终 frozen Teacher checkpoint 重新采样的数据，排除 checkpoint mixture 对 offline SFT 的影响。
 
 ## 与 Harness-OPD / PRISM Proposal 的关系
 
