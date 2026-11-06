@@ -176,7 +176,7 @@ $$
 ## 参考
 
 - [LensVLM 论文](https://arxiv.org/abs/2605.07019) / [代码](https://github.com/apple-aiml-research/ml-lensvlm)
-- 本仓库：[OPHSD 笔记](OPHSD-reading-notes.md) · [HAD 笔记](HAD-reading-notes.md) · [ActionOPD 笔记](ActionOPD-reading-notes.md)
+- 本仓库：[OPHSD 笔记](../notes/OPHSD-reading-notes.md) · [HAD 笔记](../notes/HAD-reading-notes.md) · [ActionOPD 笔记](../notes/ActionOPD-reading-notes.md)
 - [英文 Proposal](LensVLM-Harness-OPD-proposal.md)
 
 > 注：本文为待验证的研究计划，所有 OPD-Harness 效果均不是已有实验结果。

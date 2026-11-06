@@ -37,12 +37,12 @@
 | 论文 / 方向 | 已有做法 | PRISM 不能重复的部分 | 借鉴点 |
 | --- | --- | --- | --- |
 | [LensVLM](https://arxiv.org/abs/2605.07019) | 压缩页图定位、Expand 访问原文/OCR/高清图，推理时有工具 | 不把 select/expand 本身当作创新 | 可控视觉信息瓶颈与证据定位 |
-| [OPHSD](OPHSD-reading-notes.md) | Harness 作为 Teacher-only context，在 Student rollout prefix 上反向 KL；部署去掉 Harness | Teacher-only Harness → Tool-free Student 不是创新 | matched-prefix OPD、程序与不可见事实边界 |
-| [HAD](HAD-reading-notes.md) | 对比同 Teacher 有/无 Harness 的 action，并在 Student reasoning 上强化正向行为；部署保留 Harness | 不仅是简单的正负 Harness action contrast | 行为归因与决策层偏好 |
-| [ActionOPD](ActionOPD-reading-notes.md) | Student 访问状态上使用黑箱 Teacher 的 semantic action reward；不要求相同 tokenizer | 不仅是把 token KL 替换成 action matching | 页面选择等语义行动的监督 |
-| [VPD](VPD-reading-notes.md) | 语言反馈条件下 Teacher refinement 与 Student distillation 交替 | 不能仅靠 teacher/student 双阶段更新声称新颖 | Feedback-conditioned teacher 优化思路 |
-| [HERD](HERD-reading-notes.md) | Skill 与 residual memory 的递归演化与内化 | Harness 演化再蒸馏不是创新 | Student residual 与避免漂移 |
-| [GUI-HARVEST](GUI-HARVEST-reading-notes.md) | 证据驱动的 harness runtime 代码 patch 与两层 validation | 不应声称发明 evidence-driven harness evolution | 干预、跨样本验证与可证伪修复 |
+| [OPHSD](../notes/OPHSD-reading-notes.md) | Harness 作为 Teacher-only context，在 Student rollout prefix 上反向 KL；部署去掉 Harness | Teacher-only Harness → Tool-free Student 不是创新 | matched-prefix OPD、程序与不可见事实边界 |
+| [HAD](../notes/HAD-reading-notes.md) | 对比同 Teacher 有/无 Harness 的 action，并在 Student reasoning 上强化正向行为；部署保留 Harness | 不仅是简单的正负 Harness action contrast | 行为归因与决策层偏好 |
+| [ActionOPD](../notes/ActionOPD-reading-notes.md) | Student 访问状态上使用黑箱 Teacher 的 semantic action reward；不要求相同 tokenizer | 不仅是把 token KL 替换成 action matching | 页面选择等语义行动的监督 |
+| [VPD](../notes/VPD-reading-notes.md) | 语言反馈条件下 Teacher refinement 与 Student distillation 交替 | 不能仅靠 teacher/student 双阶段更新声称新颖 | Feedback-conditioned teacher 优化思路 |
+| [HERD](../notes/HERD-reading-notes.md) | Skill 与 residual memory 的递归演化与内化 | Harness 演化再蒸馏不是创新 | Student residual 与避免漂移 |
+| [GUI-HARVEST](../notes/GUI-HARVEST-reading-notes.md) | 证据驱动的 harness runtime 代码 patch 与两层 validation | 不应声称发明 evidence-driven harness evolution | 干预、跨样本验证与可证伪修复 |
 | Privileged-information distillation / harness policy distillation（需继续查新） | 可能已覆盖 Teacher 私有信息与控制语义迁移 | 投稿前应核验最接近方法与时间线 | 明确创新边界 |
 
 **潜在新颖性**不是这些方法的简单叠加，而是：构造一个**可测、可干预、面向 Student 可观察输入的转移价值估计**，并用于选择 Harness 的证据生成策略与 OPD 监督单位。投稿前必须重新检索最新相关工作，不能宣称完全无人研究。
@@ -320,8 +320,8 @@ $R_{\mathrm{val}}$ 在独立的、工具关闭的 Student 验证集上计算；$
 ## Repo References
 
 - [原 LensVLM + Harness OPD 中文 Proposal](LensVLM-Harness-OPD-proposal-zh.md)
-- [OPHSD](OPHSD-reading-notes.md) · [HAD](HAD-reading-notes.md) · [ActionOPD](ActionOPD-reading-notes.md)
-- [VPD](VPD-reading-notes.md) · [HERD](HERD-reading-notes.md) · [GUI-HARVEST](GUI-HARVEST-reading-notes.md)
-- [Harness formulation comparison](harness-formulation-comparison.md)
+- [OPHSD](../notes/OPHSD-reading-notes.md) · [HAD](../notes/HAD-reading-notes.md) · [ActionOPD](../notes/ActionOPD-reading-notes.md)
+- [VPD](../notes/VPD-reading-notes.md) · [HERD](../notes/HERD-reading-notes.md) · [GUI-HARVEST](../notes/GUI-HARVEST-reading-notes.md)
+- [Harness formulation comparison](../notes/harness-formulation-comparison.md)
 
 > **状态说明：** 这是研究构想，不代表已有实验数据、已验证创新性或论文接收。所有效果描述均应在实验后更新。

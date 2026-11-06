@@ -1,7 +1,7 @@
 # PRISM Plan B：Budget-Aware Harness OPD（保留 Expand 的保底研究路线）
 
 > 研究备选方案，尚未完成实验验证 · 2026-11-05  
-> 关联：[PRISM 主方案](PRISM-transferability-aware-harness-distillation-proposal-zh.md) · [LensVLM 阅读笔记](LensVLM-reading-notes.md) · [HAD](HAD-reading-notes.md) · [ActionOPD](ActionOPD-reading-notes.md)
+> 关联：[PRISM 主方案](PRISM-transferability-aware-harness-distillation-proposal-zh.md) · [LensVLM 阅读笔记](../notes/LensVLM-reading-notes.md) · [HAD](../notes/HAD-reading-notes.md) · [ActionOPD](../notes/ActionOPD-reading-notes.md)
 
 ## 0. 为什么需要 Plan B？
 

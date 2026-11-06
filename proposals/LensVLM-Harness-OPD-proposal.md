@@ -209,6 +209,6 @@ This connects to OPHSD's procedural-vs-dynamic-information distinction: potentia
 ## References
 
 - **LensVLM: Selective Context Expansion for Compressed Visual Representation of Text** — [paper](https://arxiv.org/abs/2605.07019), [code](https://github.com/apple-aiml-research/ml-lensvlm).
-- This repository's [OPHSD reading notes](OPHSD-reading-notes.md), [HAD reading notes](HAD-reading-notes.md), and [ActionOPD reading notes](ActionOPD-reading-notes.md).
+- This repository's [OPHSD reading notes](../notes/OPHSD-reading-notes.md), [HAD reading notes](../notes/HAD-reading-notes.md), and [ActionOPD reading notes](../notes/ActionOPD-reading-notes.md).
 
 > This document proposes experiments; it does not report results from this proposed OPD setup.

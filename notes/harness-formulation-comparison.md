@@ -451,7 +451,7 @@ HERD 位于另一条轴上：它重点规定 harness 中“可积累的外部知
 
 ## LensVLM 与 PRISM Proposal 能否套进这个框架？
 
-对应提案：[LensVLM Harness-OPD](LensVLM-Harness-OPD-proposal-zh.md) · [PRISM Transferability-Aware Harness Distillation](PRISM-transferability-aware-harness-distillation-proposal-zh.md)
+对应提案：[LensVLM Harness-OPD](../proposals/LensVLM-Harness-OPD-proposal-zh.md) · [PRISM Transferability-Aware Harness Distillation](../proposals/PRISM-transferability-aware-harness-distillation-proposal-zh.md)
 
 ### 结论：执行框架能套，但训练抽象需要增加“可见性视图”
 
@@ -616,5 +616,6 @@ HPD 的三视图也可作为 proposal baseline：`RUNTIME` 从 native history �
 
 - [HAD](../HAD-Harness-Aware%20Distillation%20for%20Small%20Language%20Model%20Agents.pdf)：§3.1–3.3、§4.1、Appendix B.2；尤其是 harness 只向 observation 添加文本、不选择或屏蔽 action 的实现边界。
 - [OPHSD](../OPHSD.pdf)：§3.1–3.3、Figure 1、Appendix C；尤其是动态 harness 的状态转移定义和 `C[H_θ(x,z)]`。
+- [HPD](../HARNESS%20POLICY%20DISTILLATION.pdf)：Figure 1、§2–4、Appendix B、F；尤其是 native runtime state、control document、verified action 与 T/I/R 三视图共享参数训练。
 - [HERD](../HERD-Harness-Evolving%20Recursive%20Distillation%20for%20Continual%20Learning.pdf)：§2.1–2.4；尤其是 `H_t=(K_t,R_t)` 与 `f(x;θ,K)`。
 - [GUI-HARVEST](../GUI-Agent-Harness-Evolution.pdf)：§2、§3.1–3.5、Figure 2；尤其是 harness scope、源码 patch 和 promotion gates。
