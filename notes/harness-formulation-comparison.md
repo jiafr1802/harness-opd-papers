@@ -501,6 +501,30 @@ flowchart LR
   G --> LOSS[weighted OPD update]
 ```
 
+### 如果把 LensVLM 分别套进五种 Harness 框架
+
+下面是**设计映射**，不是这些论文已经在 LensVLM 上做过的实验。五行使用同一组 LensVLM 资产——压缩页面、原文/OCR/高清页、页码索引与展开工具——但对“什么才算 Harness”、谁被训练以及部署时保留什么作出不同选择。
+
+| 框架口径 | LensVLM 中 Harness 的定义 | 具体状态、渲染与控制 | 学习对象 | 部署形态与最适合的问题 |
+| --- | --- | --- | --- | --- |
+| **HAD：固定文本增强** | 一个确定性的页面阅读状态 tracker + 文本 renderer；Harness 本体是加入 VLM observation 的状态提示，不是 `read_page` 工具本身 | 跟踪已展开/未展开页、当前证据页、失败或重复读取、剩余预算；渲染为“已读第 3 页、仍缺日期证据、剩余 2 次展开”等文本，但不替模型选页或屏蔽 action | 更新 VLM，使其更会利用 retained harness text；可比较有/无提示时的页面选择差异 | **保留 Harness**；适合研究小 VLM 是否会使用阅读进度、失败提示和预算信息 |
+| **OPHSD：Teacher-only 多调用程序** | 一个固定的 `locate → expand → verify → answer` inference program；Harness 包含多次模型调用、工具 observation、状态转移与最终 readout | Teacher 根据压缩概览选页，读取原文/OCR/高清页，验证证据后继续或停止；Student 只看压缩页，在相同 Student response prefix 上接受 logits | 更新 tool-free Student，内化可迁移的选页、证据使用与停止 procedure；privileged evidence 只做 Teacher conditioning | **Student 部署时移除 Harness**；最贴合 LensVLM Harness-OPD Direction B，但不可见动态事实不能被可靠内化 |
+| **HERD：bounded skill registry + residual memory** | `H_t=(K_t,R_t)`；`K_t` 保存可路由的文档阅读 skill，`R_t` 保存当前权重和 skills 仍处理不好的高 residual 文档/问题 | skill 可写成“多跳题先定位实体页，再展开关系页”“表格题优先高清 zoom”；router 按任务/文档前缀选择一条 skill。Residual records 用于下一阶段 drift probes，不直接作为在线检索答案 | 每批文档先更新有容量约束的 `K_t/R_t`，再把 routed skill 的优势递归蒸馏进 Student 权重 | **每 stage 蒸馏后移除当前 Harness**；适合 continual document streams 和跨域阅读策略积累，不适合把任意页原文当成可蒸馏 skill |
+| **HPD：显式 runtime semantics** | `H=(s_b,Ω_H,T_H)`；Harness 是完整 control state、serializer 与 transition kernel，而不只是 prompt 或工具列表 | `s_b` 保存 read set、权限、预算、pending evidence obligations、工具结果与 termination condition；`Ω_H` 生成 control document；`T_H` 校验 `select/read/zoom/answer`，执行工具并写回 observation | 蒸馏 runtime control semantics：何时可读、预算如何变化、何时证据充分、什么 action 合法；privileged factual evidence 与 control document 分开处理 | **保留 native tool interface，可移除 privileged control document**；适合严格定义 LensVLM agent 边界并做 runtime replay/verified-action baseline |
+| **GUI-HARVEST：可演化完整 runtime** | 一棵可编辑 LensVLM agent 源码树：page renderer、retriever、OCR/zoom wrappers、controller、verification、retry、error recovery、termination 与 telemetry 都属于 Harness | 根据多任务 trajectories 聚类失败模式，例如重复展开、选错页后不恢复、无证据提前回答；Engineer patch controller/renderer，Validator 用预注册 utility 与 behavior gates 决定 promote/rollback | **冻结 VLM，更新 Harness 源码**；优化对象是工具路由、控制流和恢复逻辑，而非 Student 参数 | **保留优化后的 Harness**；适合 Direction A 的工程优化，回答“怎样的 LensVLM runtime 最可靠”，但不直接产生 tool-free Student |
+
+同一个 LensVLM 系统因此会得到五种不同的形式对象：
+
+```text
+H_HAD      = tracker + status-text renderer
+H_OPHSD    = locate/expand/verify multi-call program
+H_HERD     = bounded reading skills K_t + residual memory R_t
+H_HPD      = runtime state s_b + serializer Ω_H + transition T_H
+H_HARVEST  = editable agent source tree + evidence-gated patch loop
+```
+
+选择标准不是哪个定义“最完整”，而是研究问题：若目标是改善保留工具的小模型，选 HAD；若目标是 Teacher 有工具、Student 无工具，选 OPHSD；若文档与任务持续到来，选 HERD；若重点是 action 合法性、预算和终止语义，选 HPD；若冻结 backbone、直接优化工具系统，选 GUI-HARVEST。对当前 LensVLM Harness-OPD proposal，**OPHSD 是训练主框架，HPD 是 runtime 形式化补充，HAD 可做 retained-harness baseline；HERD 与 GUI-HARVEST 应作为后续 continual/evolution 扩展，而不应一开始全部混入 MVP。**
+
 ### LensVLM Proposal 的对应关系
 
 LensVLM Proposal 中的 **Direction A: Inference-time Harness** 完全符合运行时抽象：
