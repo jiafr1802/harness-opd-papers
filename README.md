@@ -16,6 +16,7 @@
 - [Reading Is Not Reasoning](READING%20IS%20NOT%20REASONING-BRIDGING%20THE%20AGEN-TIC%20POLICY%20GAP%20IN%20VISION%E2%80%93TEXT%20COMPRESSION.pdf)：识别 text-to-image history compression 引起的 agentic policy gap，并用 CAPS 的离线轨迹蒸馏、visual-history GRPO 与在线 forward-KL 进行跨模态策略对齐。
 - [HERD: Harness-Evolving Recursive Distillation](HERD-Harness-Evolving%20Recursive%20Distillation%20for%20Continual%20Learning.pdf)：联合演化外部 harness 与参数能力，以缓解持续学习中的遗忘。
 - [GUI-HARVEST](GUI-Agent-Harness-Evolution.pdf)：根据 GUI 执行前后截图和重复运行证据自动改进 harness。
+- [UI-Voyager](https://arxiv.org/abs/2603.24533)：在 AndroidWorld 固定 Action DSL 上，通过多轮成功轨迹 RFT 和成功/失败 rollouts 的 fork-point GRSD 进行局部自纠错。
 - [VPD: Variational Policy Distillation](VPD-Learning%20from%20Language%20Feedback%20via%20Variational%20Policy%20Distillation.pdf)：以变分 EM 共同更新教师和学生，从语言反馈获得动态监督。
 - [Echo](Echo-Learning%20from%20Experience%20Data%20via%20User-Driven%20Refinement.pdf)：不涉及 harness 或 OPD，核心是收集用户与 Agent 交互中的 refinement 数据并用于 SFT；与本仓库主线关系较弱，简要了解即可。
 
@@ -29,6 +30,7 @@
 - [HPD 阅读笔记](notes/HPD-reading-notes.md)：Harness replay、control document、verified action，以及共享参数的 T/I/R 三视图联合训练与消融。
 - [HERD 阅读笔记](notes/HERD-reading-notes.md)：harness evolution、递归蒸馏、双锚点漂移约束与 TRACE+17。
 - [GUI-HARVEST 阅读笔记](notes/GUI-HARVEST-reading-notes.md)：重复 GUI 证据、跨任务行为模式、harness 源码修改和双门验证。
+- [UI-Voyager 阅读笔记](notes/UI-Voyager-reading-notes.md)：Action DSL、RFT/GRSD 两阶段训练、fork-point screenshot 对齐、失败轨迹的局部 hard-label 自蒸馏及方法边界。
 - [VPD 阅读笔记](notes/VPD-reading-notes.md)：稀疏奖励瓶颈、Variational EM、teacher refinement、student distillation 与语言反馈边界。
 - [Reading Is Not Reasoning / CAPS 阅读笔记](notes/Reading-Is-Not-Reasoning-CAPS-reading-notes.md)：视觉历史的 policy gap、离线/在线跨模态自蒸馏、GRPO、benchmark 与 LensVLM/PRISM 关系。
 - [LensVLM 论文阅读笔记（中文）](notes/LensVLM-reading-notes.md)：包含作者 Figure 2 原图、压缩/Expand 三种返回形式、Hard Sample 数据、SFT+DAPO 训练与结果、对 Harness-OPD 的启发。
