@@ -13,6 +13,7 @@
 - [OPHSD: On-Policy Harness Self-Distillation](OPHSD.pdf)：用 harness terminal context 形成 privileged teacher，在 student rollout token 上蒸馏程序性推理模式，并讨论动态外部信息的不可蒸馏边界。
 - [CAPS: Reading is not Reasoning — Bridging the Agentic Policy Gap in Vision-Text Compression](CAPS-Reading-is-not-Reasoning.pdf)：将 Agent 交互历史从文本渲染成图像后，性能下降不只是 OCR 问题，也包括搜索、行动选择、停止和证据使用的策略偏移；通过离线轨迹蒸馏和在线跨模态策略蒸馏改善视觉历史 Agent。([arXiv:2608.08960v2](https://arxiv.org/abs/2608.08960))
 - [Harness Policy Distillation](HARNESS%20POLICY%20DISTILLATION.pdf)：回放 reference trajectories 恢复 runtime control semantics，用 control document 与 harness-verified actions 联合训练 native/injected/control 三种视图，使模型在原 harness interface 下更符合执行契约。
+- [Code as Agent Harness](https://arxiv.org/abs/2605.18747)：从 code-centric 视角统一 reasoning、acting、environment、memory、control 与 multi-agent orchestration，强调 executable、verifiable、stateful 的 Agent runtime。
 - [Reading Is Not Reasoning](READING%20IS%20NOT%20REASONING-BRIDGING%20THE%20AGEN-TIC%20POLICY%20GAP%20IN%20VISION%E2%80%93TEXT%20COMPRESSION.pdf)：识别 text-to-image history compression 引起的 agentic policy gap，并用 CAPS 的离线轨迹蒸馏、visual-history GRPO 与在线 forward-KL 进行跨模态策略对齐。
 - [HERD: Harness-Evolving Recursive Distillation](HERD-Harness-Evolving%20Recursive%20Distillation%20for%20Continual%20Learning.pdf)：联合演化外部 harness 与参数能力，以缓解持续学习中的遗忘。
 - [GUI-HARVEST](GUI-Agent-Harness-Evolution.pdf)：根据 GUI 执行前后截图和重复运行证据自动改进 harness。
@@ -28,6 +29,7 @@
 - [ActionOPD 阅读笔记](notes/ActionOPD-reading-notes.md)：语义 action、黑箱教师、state-group rollout 与 GRPO-style 优化。
 - [OPHSD 阅读笔记](notes/OPHSD-reading-notes.md)：paired prompt/token KL、Memory Bank draft–verify、流程与动态内容的蒸馏边界及 pseudo-case 风险。
 - [HPD 阅读笔记](notes/HPD-reading-notes.md)：Harness replay、control document、verified action，以及共享参数的 T/I/R 三视图联合训练与消融。
+- [Code as Agent Harness 阅读笔记](notes/Code-as-Agent-Harness-reading-notes.md)：标题哲学、Harness Interface/Mechanisms、Code for Reasoning/Acting/Environment、官方实现状态及宽口径 taxonomy 的学术批判。
 - [HERD 阅读笔记](notes/HERD-reading-notes.md)：harness evolution、递归蒸馏、双锚点漂移约束与 TRACE+17。
 - [GUI-HARVEST 阅读笔记](notes/GUI-HARVEST-reading-notes.md)：重复 GUI 证据、跨任务行为模式、harness 源码修改和双门验证。
 - [UI-Voyager 阅读笔记](notes/UI-Voyager-reading-notes.md)：Action DSL、RFT/GRSD 两阶段训练、fork-point screenshot 对齐、失败轨迹的局部 hard-label 自蒸馏及方法边界。
