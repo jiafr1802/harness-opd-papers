@@ -26,6 +26,7 @@
 - [Harness 定义与 Formulation 对照](notes/harness-formulation-comparison.md)：统一抽象 HAD、OPHSD、HERD 与 GUI-HARVEST 对 harness 的不同定义、数学表示、更新对象和部署形态。
 - [复杂 Harness 的 OPD 可蒸馏性分析](notes/LongHorizon-Harness-OPD-distillability-analysis-zh.md)：以 LongHorizon-Harness 的 Manager–Executor–Auditor 为案例，分析信息、外部状态、独立审计、动作空间和经济性卡点，并提出七条必要条件假设；属于调研推断而非实验结论。
 - [GUI Agent Harness 的 OPD 候选图谱](notes/GUI-Agent-Harness-OPD-candidate-map-zh.md)：基于 GTA1、BJudge、OS-Symphony、Agent S2、CoAct-1、StateAct、OpenComputer、ClawGUI、CLI-Anything 与 Syll 原文，按状态对齐、信息可重建和动作空间一致性排序，并提出 Step-wise BoN、transition critic 与 state-matched branch teacher 三阶段实验路线。
+- [Harness-OPD 在 GUI Harness 生态中的位置与规模对标](notes/Harness-OPD-GUI-Harness-ecosystem-and-scale-report-zh.md)：将 GUI Agent 拆成环境、接口、runtime、增强策略、Harness-to-Policy 学习与部署六层，定位 Harness-OPD 的能力迁移/成本摊销生态位，并按任务、交互、计算、Harness breadth 和 deployment amortization 五类 scale 对标现有工作。
 - [HAD 通用阅读笔记](notes/HAD-reading-notes.md)：论文主线、实验结果与方法边界。
 - [HAD 针对性理解](notes/HAD-specific-clarifications.md)：重点解释 step/token、on-policy/SFT、KL 方向、两类 reasoning 前缀、preference loss 与有效性检查器。
 - [ActionOPD 阅读笔记](notes/ActionOPD-reading-notes.md)：语义 action、黑箱教师、state-group rollout 与 GRPO-style 优化。
