@@ -65,6 +65,106 @@ flowchart LR
 
 这也是 Harness-OPD 与 GUI-HARVEST 的根本区别：GUI-HARVEST 固定权重、改 Harness；Harness-OPD 固定或先确定 Harness，再改权重。HERD 同时演化 Harness 和权重，是两条路线的交汇点。
 
+### 2.3 Harness、GUI、OPD 的三集合研究版图
+
+![Harness、GUI 与 OPD 的三集合研究版图](../assets/harness-gui-opd-venn.svg)
+
+*图 1：三个 scope 是正交维度，不是从属层级。图中论文按主要贡献放置；同一工作可以跨越多个区域。中心三交集是本仓库希望推进的 GUI Harness-OPD。*
+
+三者之所以可以两两组合，是因为它们描述的不是同一种东西：
+
+| Scope | 它是什么维度 | 核心研究对象 | 单独成立时回答什么 |
+| --- | --- | --- | --- |
+| **Harness** | 系统/运行时维度 | 模型外部的 context、memory、tools、orchestration、verification、control | 不改或少改模型，怎样让 Agent 更可靠？ |
+| **GUI** | 任务与交互模态维度 | screenshot、visual grounding、mouse/keyboard、真实软件状态转移 | Agent 怎样感知并操作视觉界面？ |
+| **OPD** | 学习与优化维度 | Student 访问的 states、Teacher policy/action distribution、在线更新 | 怎样在 Student 自己会到达的状态上迁移更强策略？ |
+
+因此三圆不是互斥论文分类。GTA1 同时属于 GUI 系统和 test-time Harness；ActionOPD 属于 OPD，并可作为三交集的方法组件；ClawGUI 同时覆盖 GUI Harness 与 RL infrastructure，但不因此自动成为 Harness-OPD。
+
+#### 七个区域分别研究什么
+
+| 区域 | 已有研究问题 | 代表工作 | 与中心三交集的距离 |
+| --- | --- | --- | --- |
+| Harness only | 外部 runtime 如何组织上下文、工具、记忆与长期控制 | Code as Agent Harness；通用 long-running harness engineering | 缺 GUI state/action，也不一定训练模型 |
+| GUI only | 视觉理解、grounding 与 native GUI action policy | UI-TARS、Aguvis、SeeClick | 缺 Harness Teacher 与 on-policy transfer |
+| OPD only | 如何在 Student occupancy 上迁移 token/action policy | OPD、SOPD、VPD；ActionOPD 是语义 action 邻近方法 | 缺真实 GUI transition 与显式 GUI Harness |
+| Harness ∩ GUI | 如何用 planner、memory、judge、code、verifier 改善 GUI runtime | Agent S2、GTA1、BJudge、OS-Symphony、CoAct-1、StateAct、LongHorizon-Harness、GUI-HARVEST | 已有强 Teacher 系统，但通常不把增益蒸进权重 |
+| Harness ∩ OPD | 如何内化或学习使用 Harness 产生的 context/control/skills | HAD、OPHSD、HPD、HERD | 已有迁移机制，但主要不是视觉 GUI 环境 |
+| GUI ∩ OPD | 如何从 GUI 成功/失败轨迹、未来截图或 analyzer feedback 自蒸馏 | UI-Voyager、GHD、ComputerSD、On-Policy Self-Distillation for GUI Grounding | 已有 GUI state learning，但 Teacher 未必是完整 Harness-augmented policy |
+| Harness ∩ GUI ∩ OPD | 用 GUI Harness 在 Student GUI states 上形成 privileged Teacher，再迁移为更小或无 Harness policy | **严格直接工作仍稀缺；当前更像待建立的研究 scope** | 中心目标 |
+
+“严格直接工作稀缺”采用较强判据：必须同时有 GUI 环境、明确的外部 Harness 增益、Student-state 在线监督，以及蒸馏前后 Harness 部署形态对照。若把任意 verifier、未来截图或成功 peer 都宽泛称为 Harness，则 GHD、ComputerSD、UI-Voyager 会靠近中心；但这样会失去“蒸馏的是完整 Harness 增益还是一般 privileged feedback”的区分。
+
+### 2.4 每两个 scope 组合都已有研究，但各自只提供中心问题的一部分
+
+```mermaid
+flowchart TB
+    HG[Harness × GUI<br/>提供更强 GUI Teacher runtime<br/>GTA1 · BJudge · OS-Symphony · GUI-HARVEST]
+    HO[Harness × OPD<br/>提供 Harness-to-Policy 迁移协议<br/>HAD · OPHSD · HPD · HERD]
+    GO[GUI × OPD<br/>提供 GUI state matching 与反馈学习<br/>UI-Voyager · GHD · ComputerSD]
+    C[Harness × GUI × OPD<br/>GUI Harness Teacher<br/>+ Student-state transfer<br/>+ deployment gain recovery]
+
+    HG -->|缺少参数化迁移| C
+    HO -->|缺少真实 GUI 验证| C
+    GO -->|缺少显式 Harness 归因| C
+```
+
+#### Harness × GUI：已有强系统，缺少能力摊销
+
+这条边研究“怎样搭一个更强的 GUI Agent runtime”。其规模和系统成熟度最高：
+
+- Agent S2 用 Manager/Worker 与多 grounder 分工；
+- GTA1 在每个 GUI state 做 Best-of-$K$ action selection；
+- BJudge 在多个完整 rollout 之间做 behavior-level selection；
+- OS-Symphony 引入 RMA、Searcher、Grounders 与 Coder；
+- GUI-HARVEST 根据多次 GUI 证据自动 patch runtime 源码。
+
+这些工作产生了更强 Teacher，但通常部署仍保留完整系统。中心问题需要再问：去掉 $K$ 次采样、judge、RMA 或多 agent 后，单策略能追回多少增益？
+
+#### Harness × OPD：已有迁移理论，缺少 GUI 复杂性
+
+这条边研究“外部 Harness 的什么可以进入权重”：
+
+- HAD 学习使用部署时保留的状态/失败提示；
+- OPHSD 把固定多调用程序作为 privileged Teacher，部署移除 Harness；
+- HPD 把 runtime state、control document 与 verified action 编译成 native policy；
+- HERD 先演化 bounded skills/memory，再递归蒸馏并控制漂移。
+
+这组工作已经提供 context matching、action contrast、multi-view control semantics 与 continual distillation，但尚未充分面对 GUI 的坐标动作、不可见后台状态、昂贵环境 reset 和多步状态分叉。
+
+#### GUI × OPD：已有视觉轨迹学习，缺少 Harness 增益归因
+
+这条边研究“怎样从 GUI 交互经验改进当前 policy”：
+
+- UI-Voyager 用失败轨迹定位 fork point，再用成功 peer response 做 hard-target self-distillation；
+- GHD 在 Student response/trajectory prefix 上利用 action 后 next screenshot 重打分，并按恢复条件 gate；
+- ComputerSD 用前后截图 analyzer 的 guidance 与 step value，结合 value-gated token OPSD 和 GRPO；
+- GUI grounding self-distillation 用视觉增强或后验反馈改善坐标预测。
+
+它们最接近中心，但 privileged signal 常是未来截图、成功 peer 或 analyzer，而不是一个先被证明有独立增益的完整 GUI Harness。中心三交集要求增加 Harness ablation：同一 backbone 在有/无 Harness 时到底产生了什么 policy difference，Student 又回收了多少。
+
+#### 中心三交集：三个条件必须同时成立
+
+| 条件 | 为什么不可缺 | 推荐最小实现 |
+| --- | --- | --- |
+| GUI | 必须在真实 screenshot/action/transition 上验证，而非文本工具环境替代 | OSWorld-Verified 或可重置 GUI benchmark |
+| Harness | Teacher 优势必须来自可关闭、可消融的外部机制 | GTA1 $K=8$ judge 对 $K=1$ |
+| OPD | 监督必须覆盖 Student 实际访问的 GUI states | Student rollout 上 semantic-action matching/preference |
+| 部署对照 | 必须证明 Harness 真的被移除或缩小 | Teacher $K=8$、Student $K=1$、base $K=1$ 三方对照 |
+| 增益归因 | 必须区分更强模型、更多环境步和 Harness 本身 | same backbone、same grounder、same step budget |
+
+最小中心实验因此不是把所有 GUI Harness 组件一次加入，而是：
+
+```math
+\underbrace{\text{GTA1-style GUI BoN}}_{\text{Harness × GUI Teacher}}
++
+\underbrace{\text{Student-state semantic OPD}}_{\text{GUI × OPD protocol}}
+\longrightarrow
+\underbrace{\text{single-sample GUI policy}}_{\text{三交集产物}}.
+```
+
+它先把三者交集做“窄而真”，再逐步加入 RMA/PRM transition feedback、BJudge trajectory selection 和 OpenComputer verifier。
+
 ## 3. “Harness”在不同研究里不是同一大小
 
 ### 3.1 Harness-OPD 内部的对象光谱

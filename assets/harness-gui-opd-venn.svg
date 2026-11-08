@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="720" viewBox="0 0 900 720" role="img" aria-labelledby="title desc">
+  <title id="title">Harness, GUI, and OPD research scope map</title>
+  <desc id="desc">Three overlapping circles show standalone research, pairwise intersections, and the sparse GUI Harness-OPD center.</desc>
+  <rect width="900" height="720" fill="#fbfaf7"/>
+
+  <text x="450" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#202522">Harness × GUI × OPD 研究版图</text>
+  <text x="450" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#5b625e">系统机制、交互模态、学习方法是三条正交轴</text>
+
+  <circle cx="450" cy="270" r="220" fill="#e9b44c" fill-opacity="0.34" stroke="#9b6810" stroke-width="3"/>
+  <circle cx="300" cy="450" r="220" fill="#45a29e" fill-opacity="0.31" stroke="#176f6b" stroke-width="3"/>
+  <circle cx="600" cy="450" r="220" fill="#db6b62" fill-opacity="0.29" stroke="#9d302b" stroke-width="3"/>
+
+  <g font-family="Arial, sans-serif" fill="#202522">
+    <text x="450" y="105" text-anchor="middle" font-size="25" font-weight="700">HARNESS</text>
+    <text x="450" y="130" text-anchor="middle" font-size="14">模型外部的 context / memory / tools / control</text>
+
+    <text x="200" y="626" text-anchor="middle" font-size="25" font-weight="700">GUI</text>
+    <text x="200" y="651" text-anchor="middle" font-size="14">截图、坐标、真实软件</text>
+    <text x="200" y="670" text-anchor="middle" font-size="14">与视觉状态转移</text>
+
+    <text x="700" y="626" text-anchor="middle" font-size="25" font-weight="700">OPD</text>
+    <text x="700" y="651" text-anchor="middle" font-size="14">Student-state online</text>
+    <text x="700" y="670" text-anchor="middle" font-size="14">policy distillation</text>
+
+    <text x="450" y="173" text-anchor="middle" font-size="16" font-weight="700">Harness only</text>
+    <text x="450" y="195" text-anchor="middle" font-size="14">Code as Agent Harness</text>
+    <text x="450" y="215" text-anchor="middle" font-size="14">generic harness engineering</text>
+
+    <text x="226" y="505" text-anchor="middle" font-size="16" font-weight="700">GUI only</text>
+    <text x="226" y="527" text-anchor="middle" font-size="14">UI-TARS · Aguvis</text>
+    <text x="226" y="547" text-anchor="middle" font-size="14">SeeClick · grounding models</text>
+
+    <text x="674" y="505" text-anchor="middle" font-size="16" font-weight="700">OPD only</text>
+    <text x="674" y="527" text-anchor="middle" font-size="14">OPD / SOPD</text>
+    <text x="674" y="547" text-anchor="middle" font-size="14">VPD · ActionOPD*</text>
+
+    <text x="305" y="273" text-anchor="middle" font-size="16" font-weight="700">Harness ∩ GUI</text>
+    <text x="305" y="296" text-anchor="middle" font-size="13">Agent S2 · GTA1 · BJudge</text>
+    <text x="305" y="315" text-anchor="middle" font-size="13">OS-Symphony · CoAct-1</text>
+    <text x="305" y="334" text-anchor="middle" font-size="11">StateAct · LongHorizon · GUI-HARVEST</text>
+
+    <text x="595" y="273" text-anchor="middle" font-size="16" font-weight="700">Harness ∩ OPD</text>
+    <text x="595" y="296" text-anchor="middle" font-size="13">HAD · OPHSD</text>
+    <text x="595" y="315" text-anchor="middle" font-size="13">HPD · HERD</text>
+
+    <text x="450" y="560" text-anchor="middle" font-size="16" font-weight="700">GUI ∩ OPD</text>
+    <text x="450" y="583" text-anchor="middle" font-size="13">UI-Voyager · GHD · ComputerSD</text>
+    <text x="450" y="602" text-anchor="middle" font-size="13">GUI grounding self-distillation</text>
+
+    <rect x="337" y="350" width="226" height="132" rx="8" fill="#fffdf8" fill-opacity="0.92" stroke="#242a27" stroke-width="2"/>
+    <text x="450" y="382" text-anchor="middle" font-size="17" font-weight="700">Harness ∩ GUI ∩ OPD</text>
+    <text x="450" y="407" text-anchor="middle" font-size="15" font-weight="700" fill="#9d302b">严格直接工作仍稀缺</text>
+    <text x="450" y="431" text-anchor="middle" font-size="13">目标：GUI Harness Teacher</text>
+    <text x="450" y="451" text-anchor="middle" font-size="13">→ Student-state OPD</text>
+    <text x="450" y="471" text-anchor="middle" font-size="13">→ 更小 / 无 Harness</text>
+  </g>
+
+  <line x1="94" y1="682" x2="126" y2="682" stroke="#202522" stroke-width="2"/>
+  <text x="136" y="687" font-family="Arial, sans-serif" font-size="13" fill="#4d5550">* ActionOPD 是语义 action 蒸馏邻近工作，不主张其拥有独立 Harness。</text>
+</svg>
