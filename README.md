@@ -24,6 +24,7 @@
 ## 阅读笔记
 
 - [Harness 定义与 Formulation 对照](notes/harness-formulation-comparison.md)：统一抽象 HAD、OPHSD、HERD 与 GUI-HARVEST 对 harness 的不同定义、数学表示、更新对象和部署形态。
+- [复杂 Harness 的 OPD 可蒸馏性分析](notes/LongHorizon-Harness-OPD-distillability-analysis-zh.md)：以 LongHorizon-Harness 的 Manager–Executor–Auditor 为案例，分析信息、外部状态、独立审计、动作空间和经济性卡点，并提出七条必要条件假设；属于调研推断而非实验结论。
 - [HAD 通用阅读笔记](notes/HAD-reading-notes.md)：论文主线、实验结果与方法边界。
 - [HAD 针对性理解](notes/HAD-specific-clarifications.md)：重点解释 step/token、on-policy/SFT、KL 方向、两类 reasoning 前缀、preference loss 与有效性检查器。
 - [ActionOPD 阅读笔记](notes/ActionOPD-reading-notes.md)：语义 action、黑箱教师、state-group rollout 与 GRPO-style 优化。
