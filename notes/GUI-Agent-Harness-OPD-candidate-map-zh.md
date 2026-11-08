@@ -184,9 +184,8 @@ OpenComputer 不应和 Agent policy Harness 混为一谈。它提供 33 个应�
 
 ### Phase A：最小可证伪实验
 
-做 **GTA1 Step-wise BoN → Single-Sample OPD**：同一开源 backbone、同一 grounder、同一 GUI DSL，Teacher $K=8$，Student $K=1$。核心指标不是只看最终成功率，而是：
+做 **GTA1 Step-wise BoN → Single-Sample OPD**：同一开源 backbone、同一 grounder、同一 GUI DSL，Teacher $K=8$，Student $K=1$。除最终成功率外，还应报告：
 
-- Student 回收了多少 Teacher Harness gain；
 - action agreement、state coverage 与错误恢复率；
 - 每次成功的 token、调用数、墙钟时间；
 - 对未见应用、分辨率和更长 horizon 的迁移。
@@ -197,11 +196,11 @@ OpenComputer 不应和 Agent policy Harness 混为一谈。它提供 33 个应�
 
 ### Phase C：从 step scaling 扩展到 rollout scaling
 
-把 BJudge 改造成共同 prefix 上的短分支比较器，研究 delayed consequence 能否被 single-rollout Student 内化。此阶段再比较单模型多样性与多模型 ensemble，避免一开始把 Harness gain 和更强 Teacher model 混在一起。
+把 BJudge 改造成共同 prefix 上的短分支比较器，研究 delayed consequence 能否被 single-rollout Student 内化。此阶段再比较单模型多样性与多模型 ensemble，避免一开始把 Harness 设置和更强 Teacher model 混在一起。
 
 ### Phase D：边界实验
 
-选择同一批任务，构造三种 Teacher：GUI BoN、GUI+Verifier、Code/State Teacher。测量随着 privileged information 与 action mismatch 增加，OPD gain recovery 如何下降。这能把“可蒸馏性光谱”从分析判断变成实验曲线。
+选择同一批任务，构造三种 Teacher：GUI BoN、GUI+Verifier、Code/State Teacher。测量随着 privileged information 与 action mismatch 增加，Student 的任务表现和训练稳定性如何变化。这能把“可蒸馏性光谱”从分析判断变成实验曲线。
 
 ## 10. 最终排序
 
