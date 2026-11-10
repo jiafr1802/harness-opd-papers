@@ -24,6 +24,7 @@
 ## 阅读笔记
 
 - [Harness 定义与 Formulation 对照](notes/harness-formulation-comparison.md)：统一抽象 HAD、OPHSD、HERD 与 GUI-HARVEST 对 harness 的不同定义、数学表示、更新对象和部署形态。
+- [SWE-bench 训练环境与 Action Space 对照](notes/SWE-bench-training-environments-and-action-spaces-zh.md)：比较 SWE-agent、SWE-Gym/OpenHands、R2E-Gym、SWE-smith 与 SWE-RL 的 Docker sandbox、agent scaffold、tool schema、verifier 和训练用途，并给出 OPRD 公开复现环境建议。
 - [复杂 Harness 的 OPD 可蒸馏性分析](notes/LongHorizon-Harness-OPD-distillability-analysis-zh.md)：以 LongHorizon-Harness 的 Manager–Executor–Auditor 为案例，分析信息、外部状态、独立审计、动作空间和经济性卡点，并提出七条必要条件假设；属于调研推断而非实验结论。
 - [GUI Agent Harness 的 OPD 候选图谱](notes/GUI-Agent-Harness-OPD-candidate-map-zh.md)：基于 GTA1、BJudge、OS-Symphony、Agent S2、CoAct-1、StateAct、OpenComputer、ClawGUI、CLI-Anything 与 Syll 原文，按状态对齐、信息可重建和动作空间一致性排序，并提出 Step-wise BoN、transition critic 与 state-matched branch teacher 三阶段实验路线。
 - [Harness-OPD 在 GUI Harness 生态中的位置与规模对标](notes/Harness-OPD-GUI-Harness-ecosystem-and-scale-report-zh.md)：用 Harness × GUI × OPD 三集合图和七区域表梳理三个单域、三组两两交叉与中心研究空白；同时将 GUI Agent 拆成六层系统栈，并按任务、交互、计算和 Harness breadth 四类 scale 对标现有工作。
