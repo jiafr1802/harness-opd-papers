@@ -276,7 +276,7 @@ def build_deck():
     set_background(slide)
     add_header(slide, "OPRD：Code Agent 中最直接的严格 Multi-turn OPD", "Core work 02", AMBER)
     add_image_contain(slide, ASSETS / "oprd-overview.png", Inches(0.55), Inches(1.55), Inches(7.25), Inches(4.6))
-    add_card(slide, "Student rollout", "Reminder-free\nClaude Code scaffold\n最多 200 turns", Inches(8.05), Inches(1.62), Inches(2.2), Inches(1.55), accent=AMBER)
+    add_card(slide, "Student rollout", "Reminder-free\nCoding environment\n在线生成轨迹", Inches(8.05), Inches(1.62), Inches(2.2), Inches(1.55), accent=AMBER)
     add_card(slide, "成功轨迹", "Autoregressive\nself-imitation", Inches(10.45), Inches(1.62), Inches(2.2), Inches(1.55), accent=GREEN)
     add_card(slide, "失败轨迹", "Reminder-conditioned\nTop-100 reverse KL", Inches(8.05), Inches(3.4), Inches(2.2), Inches(1.55), accent=CORAL)
     add_card(slide, "Temporal scope", "Global constraint\n+ Turn-local feedback", Inches(10.45), Inches(3.4), Inches(2.2), Inches(1.55), accent=BLUE)

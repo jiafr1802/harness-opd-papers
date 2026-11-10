@@ -7,7 +7,7 @@
 这个问题有两个不同的“最复杂”，不能只给一个名字。
 
 1. **若问“被内化进模型权重的源 Harness 最复杂到什么程度”**，目前我找到的上限是 **Harness-Zero**（arXiv:2609.24974）。它的源 Harness 不再只是 prompt 或 plan–solve，而是一个经过三轮演化的完整 tool-using Harness，包含 **tools、middleware、skills 和 memory**。训练时再用一个 harnessing agent，把这些组件的作用逐步翻译成学生原生动作，最后通过 SFT 内化到 Qwen3.5-9B。
-2. **若坚持严格的 token-level on-policy distillation 定义**，coding 方向的直接命中是 **OPRD**（arXiv:2610.21496）。它在学生自己的 Claude Code 轨迹上，对失败轨迹使用 Reminder-conditioned teacher 的 reverse KL。但被移除的是 Global/Turn-local Reminder，不是 Claude Code 的完整运行时。
+2. **若坚持严格的 token-level on-policy distillation 定义**，coding 方向的直接命中是 **OPRD**（arXiv:2610.21496）。它在学生自己的 repository-level coding 轨迹上，对失败轨迹使用 Reminder-conditioned teacher 的 reverse KL。但被移除的是 Global/Turn-local Reminder，不是底层 coding agent runtime；论文只在评测设置中明确将该 runtime 实现为共享 Claude Code scaffold。
 3. **若问“现实中最复杂的 Harness 能做到什么程度”**，LongHorizon-Harness 明显更复杂：Manager–Executor–Auditor、跨轮持久审计状态、fresh context、独立只读环境核验、GUI/CLI 路由、权限隔离和恢复循环。但它不训练模型，也没有把这套结构蒸馏进权重。
 
 因此，当前前沿不是“已经把 LongHorizon 蒸完了”，而是：
@@ -124,12 +124,15 @@ OPRD 是“针对 code 的 OPD 有没有”的最直接回答：**有，而且�
 
 ### 4.2 Harness 复杂度
 
-OPRD 的任务很复杂：所有模型都运行在共享 Claude Code agent scaffold 中，单题最多 200 agent turns，能浏览 repository、编辑代码、运行工具和测试，评测覆盖 SWE-bench Verified、Pro 和 Multilingual。
+OPRD 的训练方法明确写的是：当前学生在一个 code execution environment 中在线生成 reminder-free trajectory，环境返回 tool responses，并由 executable verifier 判断最终 repository state。论文没有进一步说明训练 rollout 的 agent scaffold 是否就是 Claude Code。它只在 **Evaluation Setup** 中明确写道，所有被评测模型共享 Claude Code agent scaffold，单题最多 200 agent turns，评测覆盖 SWE-bench Verified、Pro 和 Multilingual。
+
+Teacher 不需要独立运行这个 scaffold。它不重新采样 trajectory，也不执行 tool call，而是在同一条学生轨迹上读取原始 interaction history；论文明确说明 system messages、user messages 和 tool responses 都属于 generation context。Teacher 只是在该上下文中注入 Reminder，对学生已经生成的 token prefix 计算 logits。因此，执行 action 的 runtime 与定义 action/tool interface 的序列化上下文需要区分：前者只由 rollout policy 调用，后者会同时进入 student/teacher 的条件输入。
 
 但要分清两个层次：
 
 ```text
-保留的内层 Harness：Claude Code scaffold、tools、repository environment、verifier
+保留的内层 Harness：coding agent runtime、tools、repository environment、verifier
+评测时的具体实现：共享 Claude Code scaffold
 被蒸馏并移除的外加层：Global / Turn-local Reminders
 ```
 
