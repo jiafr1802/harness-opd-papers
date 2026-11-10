@@ -122,7 +122,23 @@ OPRD 是“针对 code 的 OPD 有没有”的最直接回答：**有，而且�
 
 这是严格的 on-policy state alignment：teacher 不另采样一条漂亮轨迹，而是在学生真正访问的错误状态上给分布监督。
 
-### 4.2 Harness 复杂度
+### 4.2 Action space、Tool space 与代码可用性
+
+OPRD 没有把 action space 定义为一个离散工具集合。方法中的 `a_k` 是第 `k` 个 assistant turn 的完整 token sequence；loss 只覆盖 `Ω(τ)` 中的有效 assistant tokens。System messages、user messages 和 tool responses 只提供 generation context，不作为 prediction targets。因此它蒸馏的是共享词表上的 token policy，其中 tool call 只是可被外部 runtime 解析的一类 assistant token sequence。
+
+论文没有公开 allowed-tools 列表、tool schema、tool-call serialization 或训练 scaffold 实现。能够从正文、Figure 1 和附录直接确认的能力范围只有：
+
+- repository 文件搜索与读取；
+- 文件编辑，包括按 `old_string` 定位的局部 edit；
+- command/tool execution 及错误恢复；
+- compilation、test/build、diff、formatting 和 validation；
+- 路径、调用者、source value、data flow 与 patch surface 检查。
+
+Figure 1 中的 `Edit connector.py`、`Search: get_running_loop()` 和 `Run narrow regression test` 是行为示例，不足以证明这些就是精确工具名。评测明确使用 Claude Code scaffold，因此评测 action protocol 必须与该 scaffold 兼容；但训练部分只描述通用 coding environment，不能从论文确定训练与评测是否使用完全相同的 Claude Code tool set。
+
+截至 2026-11-10，论文页面、arXiv TeX source 和 GitHub 标题/arXiv-ID 搜索均未发现作者发布的 OPRD 方法代码。论文只说明训练基于 VeOmni；VeOmni 是分布式训练框架，不包含本文未公开的 coding environment、Reminder runtime 或 tool schema。GitHub 上存在第三方 `daiwk/auto-research` 的 [`reminder_distillation.py`](https://github.com/daiwk/auto-research/blob/main/src/auto_research/post_training/reminder_distillation.py)，但它明确只是同前缀评分、Reminder scope、Top-100 reverse KL 和 teacher refresh 的算法组件，不执行 repository task，也没有 coding-agent Harness。
+
+### 4.3 Harness 复杂度
 
 OPRD 的训练方法明确写的是：当前学生在一个 code execution environment 中在线生成 reminder-free trajectory，环境返回 tool responses，并由 executable verifier 判断最终 repository state。论文没有进一步说明训练 rollout 的 agent scaffold 是否就是 Claude Code。它只在 **Evaluation Setup** 中明确写道，所有被评测模型共享 Claude Code agent scaffold，单题最多 200 agent turns，评测覆盖 SWE-bench Verified、Pro 和 Multilingual。
 
@@ -138,7 +154,7 @@ Teacher 不需要独立运行这个 scaffold。它不重新采样 trajectory，�
 
 所以 OPRD 是复杂 **coding policy** 上的 OPD，却不是完整 **coding runtime Harness** 的 OPD。它把“看到测试/工具反馈后该如何纠偏”压进模型，但没有内化 shell、编辑器、测试执行、上下文管理或权限系统本身。
 
-### 4.3 结果
+### 4.4 结果
 
 - Qwen3.5-4B 三个 benchmark 宏平均：base `36.6%`，完整 OPRD `47.9%`；
 - Qwen3.5-9B：base `44.4%`，完整 OPRD `55.9%`；
