@@ -40,7 +40,7 @@ PAGES = [
                     "假设 2：Teacher 在 Student 到达的状态上仍然可靠。错误 tool call 会把轨迹推入 Teacher 很少见的状态。",
                     "假设 3：Teacher–Student likelihood ratio 可以直接充当 value/advantage。它首先衡量 imitation gap，不保证与任务结果因果一致。",
                 ],
-                "equations": [r"\mathcal L_{\mathrm{OPD}}=\mathbb E_{y\sim\pi_\theta}\sum_t D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{<t})\,\|\,\pi_T(\cdot\mid y_{<t},c)\right)"],
+                "equations": [r"\mathcal L_{\mathrm{OPD}}=\mathbb E_{y\sim\pi_\theta}\sum_t D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1},c)\right)"],
             },
             {
                 "name": "四条研究主线",
@@ -79,8 +79,8 @@ PAGES = [
                     "核心贡献是 reliability weighting；它仍以 disagreement 作为 proxy，不等价于真实因果责任。",
                 ],
                 "equations": [
-                    r"\Delta_k=\frac1{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{<t})\,\|\,\pi_T(\cdot\mid y_{<t})\right)",
-                    r"d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{<t})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{<t})\right|",
+                    r"\Delta_k=\frac1{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1})\right)",
+                    r"d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{1:t-1})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{1:t-1})\right|",
                     r"w_k=\min\!\left(w_1\prod_{u=1}^{k-1}\frac{d_u+\epsilon}{d_{u+1}+\epsilon},\,1+\delta\right)",
                 ],
             }
@@ -106,7 +106,7 @@ PAGES = [
                     "最终只调节 GRPO advantage 的幅度，保留原始 outcome 的正负方向；GRPO update 本身不变。",
                 ],
                 "equations": [
-                    r"\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,<j})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,<j})",
+                    r"\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,1:j-1})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,1:j-1})",
                     r"w_\ell=\Pi_{[1-\alpha_{\mathrm{clip}},\,1+\alpha_{\mathrm{clip}}]}\!\left(2\sigma(\operatorname{sign}(A_\ell)\Delta_\ell)\right)",
                     r"\widetilde A_\ell=(1-\lambda_{\mathrm{mix}})A_\ell+\lambda_{\mathrm{mix}}(w_\ell A_\ell)",
                 ],
@@ -182,7 +182,7 @@ PAGES = [
                 "tag": "Selective intervention",
                 "lead": "Intervention Agent 依据 Student response、Teacher disagreement 与 confidence，在 Skip / Weak / Strong 三档之间选择。",
                 "bullets": ["Intervention intensity 为 0 / α / 1，分别对应 Skip / Weak / Strong。", "Teacher confidence 沿 Student action prefix 聚合，抑制低置信 Teacher 的干预。", "按实际被监督 token 数归一化，保持 loss scale 稳定。"],
-                "equations": [r"c_t=\frac1{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,<i})", r"i_t\in\{0,\alpha,1\},\qquad s_t=i_tc_t", r"\mathcal L_{\mathrm{SAGE}}=Z\sum_t s_t\mathcal L_{\mathrm{OPD}}(h_t,a_t)"],
+                "equations": [r"c_t=\frac1{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,1:i-1})", r"i_t\in\{0,\alpha,1\},\qquad s_t=i_tc_t", r"\mathcal L_{\mathrm{SAGE}}=Z\sum_t s_t\mathcal L_{\mathrm{OPD}}(h_t,a_t)"],
             },
             {
                 "name": "ReOPD",
@@ -217,7 +217,7 @@ PAGES = [
                 ],
                 "equations": [
                     r"e=\operatorname{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\mathrm{workflow}})",
-                    r"\ell_{i,t}=\log\pi_\theta^{\mathrm{stu}}(y_{i,t}\mid x,y_{i,<t})-\log\pi_{\bar\theta}^{\mathrm{tea}}(y_{i,t}\mid x,S(x),y_{i,<t})",
+                    r"\ell_{i,t}=\log\pi_\theta^{\mathrm{stu}}(y_{i,t}\mid x,y_{i,1:t-1})-\log\pi_{\bar\theta}^{\mathrm{tea}}(y_{i,t}\mid x,S(x),y_{i,1:t-1})",
                     r"\mathcal L_{\mathrm{SDL}}=\frac1N\sum_{i,t}\rho_{i,t}^{\mathrm{on}}\left(e^{-\ell_{i,t}}-1+\ell_{i,t}\right)",
                     r"\mathcal L_{\mathrm{total}}=\mathcal L_{\mathrm{GRPO}}+\lambda\mathcal L_{\mathrm{SDL}}",
                 ],
@@ -238,7 +238,7 @@ PAGES = [
                 "tag": "Anchored residual",
                 "lead": "Full privileged context 可能让 Teacher 依赖 Student 永远看不到的答案状态。AR-OPD 先构造 partial anchor，再只迁移 full view 相对 anchor 的 residual。",
                 "bullets": ["Anchor 保留可由 Student 重建的支持。", "M_out 衡量 privileged Teacher 落到 Student 低支持 token 上的概率质量。", "λ 控制 privileged residual 强度，避免把 oracle shortcut 当作绝对模仿目标。"],
-                "equations": [r"M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)<\tau}\pi_{\mathrm{priv}}(v\mid s)", r"\log q_\lambda=\log q_{\mathrm{part}}+\lambda(\log q_{\mathrm{full}}-\log q_{\mathrm{part}})-C_t"],
+                "equations": [r"M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)\lt\tau}\pi_{\mathrm{priv}}(v\mid s)", r"\log q_\lambda=\log q_{\mathrm{part}}+\lambda(\log q_{\mathrm{full}}-\log q_{\mathrm{part}})-C_t"],
             },
             {
                 "name": "HINT",
@@ -248,7 +248,7 @@ PAGES = [
                 "tag": "Compressed hindsight",
                 "lead": "Reflector 将完整 trajectory outcome 压缩为 turn-level diagnosis 与可选纠正动作，只在识别出的错误 turns 蒸馏。原始长图写作 HERO，但对应论文和方法实际为 HINT。",
                 "bullets": ["Teacher context 注入 diagnosis，而不是泄露完整参考答案。", "Reflector 将终局反馈拆成每个错误 turn 的 diagnosis 与可选纠正 action。", "使用对称、有界的 JSD，并只在识别出的错误 turns 上聚合。"],
-                "equations": [r"h_t=(d_t,\hat a^t),\qquad q_t=\operatorname{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{<t},h_t)]", r"D_{\mathrm{JSD}}(p_t,q_t)=\tfrac12D_{\mathrm{KL}}(p_t\|m_t)+\tfrac12D_{\mathrm{KL}}(q_t\|m_t)", r"\mathcal L_{\mathrm{HINT}}=\frac1{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t"],
+                "equations": [r"h_t=(d_t,\hat a^t),\qquad q_t=\operatorname{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{1:t-1},h_t)]", r"D_{\mathrm{JSD}}(p_t,q_t)=\tfrac12D_{\mathrm{KL}}(p_t\|m_t)+\tfrac12D_{\mathrm{KL}}(q_t\|m_t)", r"\mathcal L_{\mathrm{HINT}}=\frac1{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t"],
             },
         ],
         "bottom": "新问题：Teacher 拥有更多信息不代表它在 Student state 上一定校准良好。",
@@ -266,7 +266,7 @@ PAGES = [
                 "tag": "Token Bayesian evidence",
                 "lead": "把每个 token 的 likelihood ratio 视为 Bayesian evidence，递归更新成功概率；相邻 value 的变化就是局部 advantage。",
                 "bullets": ["λ_t* 是成功条件与失败条件下当前 token likelihood 的 Bayes factor。", "Token advantages telescoping 到最终 reward 与初始 value 的差。", "一阶近似把 credit 分解为 uncertainty × evidence，并用 sequence outcome 符号校准方向。"],
-                "equations": [r"V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^*=\frac{P(y_t\mid x,y_{<t},R=1)}{P(y_t\mid x,y_{<t},R=0)}", r"V_{t+1}=\frac{\lambda_t^*V_t}{\lambda_t^*V_t+(1-V_t)},\qquad A_t^{\mathrm{raw}}=V_{t+1}-V_t", r"\widehat A_{i,t}=\operatorname{sign}(A_i^{\mathrm{seq}})|A_{i,t}^{\mathrm{raw}}|,\qquad \sum_t A_t=R-V_0"],
+                "equations": [r"V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^*=\frac{P(y_t\mid x,y_{1:t-1},R=1)}{P(y_t\mid x,y_{1:t-1},R=0)}", r"V_{t+1}=\frac{\lambda_t^*V_t}{\lambda_t^*V_t+(1-V_t)},\qquad A_t^{\mathrm{raw}}=V_{t+1}-V_t", r"\widehat A_{i,t}=\operatorname{sign}(A_i^{\mathrm{seq}})|A_{i,t}^{\mathrm{raw}}|,\qquad \sum_t A_t=R-V_0"],
             },
             {
                 "name": "PBSD",
@@ -276,7 +276,7 @@ PAGES = [
                 "tag": "Turn Bayesian evidence",
                 "lead": "比较有/无 privileged outcome information 时当前 action 的 likelihood，得到 turn-level evidence score，再通过 decision gate 调整 sequence advantage。",
                 "bullets": ["Bayes identity 将 outcome posterior 转换为 trajectory evidence ratio，并分解为 turn evidence。", "成功轨迹可能含坏动作、失败轨迹也可能含好动作；binary reward 无法表达这种局部差异。", "有界 tanh 权重保留 sequence reward 的方向，同时在 turn 内重新分配幅度。"],
-                "equations": [r"S_i=\log\frac{p(y^*\mid x_i,\tau_i)}{p(y^*\mid x_i)}=\sum_t s_{i,t}", r"s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,<t},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,<t})", r"\widetilde A_{i,t}=w_{i,t}A_i,\quad w_{i,t}=1+\operatorname{sign}(A_i)\operatorname{clip}\!\left(\tanh\frac{s_{i,t}}\delta,-c,c\right)"],
+                "equations": [r"S_i=\log\frac{p(y^*\mid x_i,\tau_i)}{p(y^*\mid x_i)}=\sum_t s_{i,t}", r"s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1})", r"\widetilde A_{i,t}=w_{i,t}A_i,\quad w_{i,t}=1+\operatorname{sign}(A_i)\operatorname{clip}\!\left(\tanh\frac{s_{i,t}}\delta,-c,c\right)"],
             },
         ],
         "bottom": "Bayesian 视角把 Teacher gap 从“模仿误差”改写成“当前动作对成功结论提供了多少证据”。",
@@ -328,7 +328,7 @@ PAGES = [
                 ],
                 "equations": [
                     r"\widetilde A_t^i=A_iw_t^i,\qquad 1-\epsilon_w\le w_t^i\le1+\epsilon_w,\qquad \frac1{T_i}\sum_t w_t^i=1",
-                    r"\Delta_{t,k}^i=\operatorname{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,<k}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,<k}^i)]",
+                    r"\Delta_{t,k}^i=\operatorname{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,1:k-1}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,1:k-1}^i)]",
                     r"q_t^i=\tanh\!\left(\frac{\operatorname{sign}(A_i)\bar d_t^i}{\tau}\right)",
                     r"w_t^i=1+\eta(q_t^i-\bar q_i)",
                 ],

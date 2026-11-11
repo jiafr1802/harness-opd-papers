@@ -17,7 +17,7 @@ Single-turn OPD 通常把 Student rollout prefix 视为固定输入，在每个 
 - 假设 3：Teacher–Student likelihood ratio 可以直接充当 value/advantage。它首先衡量 imitation gap，不保证与任务结果因果一致。
 
 $$
-\mathcal L_{\mathrm{OPD}}=\mathbb E_{y\sim\pi_\theta}\sum_t D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{<t})\,\|\,\pi_T(\cdot\mid y_{<t},c)\right)
+\mathcal L_{\mathrm{OPD}}=\mathbb E_{y\sim\pi_\theta}\sum_t D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1},c)\right)
 $$
 
 ### 四条研究主线
@@ -57,11 +57,11 @@ $$
 ![SOD 官方方法图](../assets/agentic-opd-reconstructed/sod.png)
 
 $$
-\Delta_k=\frac1{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{<t})\,\|\,\pi_T(\cdot\mid y_{<t})\right)
+\Delta_k=\frac1{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1})\right)
 $$
 
 $$
-d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{<t})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{<t})\right|
+d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{1:t-1})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{1:t-1})\right|
 $$
 
 $$
@@ -90,7 +90,7 @@ Student 仍按原策略与环境交互；rollout 完成后，将轨迹切成 cau
 ![StepOPSD 官方方法图](../assets/agentic-opd-reconstructed/stepopsd.png)
 
 $$
-\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,<j})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,<j})
+\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,1:j-1})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,1:j-1})
 $$
 
 $$
@@ -207,7 +207,7 @@ Intervention Agent 依据 Student response、Teacher disagreement 与 confidence
 ![SAGE-OPD 官方方法图](../assets/agentic-opd-reconstructed/sage-opd.png)
 
 $$
-c_t=\frac1{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,<i})
+c_t=\frac1{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,1:i-1})
 $$
 
 $$
@@ -268,7 +268,7 @@ e=\operatorname{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\
 $$
 
 $$
-\ell_{i,t}=\log\pi_\theta^{\mathrm{stu}}(y_{i,t}\mid x,y_{i,<t})-\log\pi_{\bar\theta}^{\mathrm{tea}}(y_{i,t}\mid x,S(x),y_{i,<t})
+\ell_{i,t}=\log\pi_\theta^{\mathrm{stu}}(y_{i,t}\mid x,y_{i,1:t-1})-\log\pi_{\bar\theta}^{\mathrm{tea}}(y_{i,t}\mid x,S(x),y_{i,1:t-1})
 $$
 
 $$
@@ -300,7 +300,7 @@ Full privileged context 可能让 Teacher 依赖 Student 永远看不到的答�
 ![AR-OPD 官方方法图](../assets/agentic-opd-reconstructed/ar-opd.png)
 
 $$
-M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)<\tau}\pi_{\mathrm{priv}}(v\mid s)
+M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)\lt\tau}\pi_{\mathrm{priv}}(v\mid s)
 $$
 
 $$
@@ -320,7 +320,7 @@ Reflector 将完整 trajectory outcome 压缩为 turn-level diagnosis 与可选�
 ![HINT 官方方法图](../assets/agentic-opd-reconstructed/hint.png)
 
 $$
-h_t=(d_t,\hat a^t),\qquad q_t=\operatorname{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{<t},h_t)]
+h_t=(d_t,\hat a^t),\qquad q_t=\operatorname{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{1:t-1},h_t)]
 $$
 
 $$
@@ -352,7 +352,7 @@ OPPO 给出 token-level value recursion；PBSD 将 privileged evidence 引入长
 ![OPPO 官方方法图](../assets/agentic-opd-reconstructed/oppo.png)
 
 $$
-V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^*=\frac{P(y_t\mid x,y_{<t},R=1)}{P(y_t\mid x,y_{<t},R=0)}
+V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^*=\frac{P(y_t\mid x,y_{1:t-1},R=1)}{P(y_t\mid x,y_{1:t-1},R=0)}
 $$
 
 $$
@@ -380,7 +380,7 @@ S_i=\log\frac{p(y^*\mid x_i,\tau_i)}{p(y^*\mid x_i)}=\sum_t s_{i,t}
 $$
 
 $$
-s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,<t},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,<t})
+s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1})
 $$
 
 $$
@@ -468,7 +468,7 @@ $$
 $$
 
 $$
-\Delta_{t,k}^i=\operatorname{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,<k}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,<k}^i)]
+\Delta_{t,k}^i=\operatorname{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,1:k-1}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,1:k-1}^i)]
 $$
 
 $$
