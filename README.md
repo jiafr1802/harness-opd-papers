@@ -23,6 +23,7 @@
 
 ## 阅读笔记
 
+- [Agentic OPD 发展脉络（2026.10）原图复刻](notes/Agentic-OPD-development-roadmap-2026.10-facsimile.md)：按源图片逐页保留全部总结、公式、论文截图和图表；对应无裁切 PDF 位于 `documents/Agentic-OPD-development-roadmap-2026.10-facsimile.pdf`。
 - [Harness 定义与 Formulation 对照](notes/harness-formulation-comparison.md)：统一抽象 HAD、OPHSD、HERD 与 GUI-HARVEST 对 harness 的不同定义、数学表示、更新对象和部署形态。
 - [SWE-bench 训练环境与 Action Space 对照](notes/SWE-bench-training-environments-and-action-spaces-zh.md)：比较 SWE-agent、SWE-Gym/OpenHands、R2E-Gym、SWE-smith 与 SWE-RL 的 Docker sandbox、agent scaffold、tool schema、verifier 和训练用途，并给出 OPRD 公开复现环境建议。
 - [复杂 Harness 的 OPD 可蒸馏性分析](notes/LongHorizon-Harness-OPD-distillability-analysis-zh.md)：以 LongHorizon-Harness 的 Manager–Executor–Auditor 为案例，分析信息、外部状态、独立审计、动作空间和经济性卡点，并提出七条必要条件假设；属于调研推断而非实验结论。
