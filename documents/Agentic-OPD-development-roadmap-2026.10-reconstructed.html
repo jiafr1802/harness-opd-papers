@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agentic OPD 发展脉络（2026.10）重制版</title>
+  <style>
+@page { size: 210mm 280mm; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #dfe4e2; color: #202b2f; }
+body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; }
+.page {
+  width: 210mm; height: 280mm; padding: 12mm 13mm 11mm; background: #f8f8f4;
+  page-break-after: always; position: relative; overflow: hidden;
+}
+.page:last-child { page-break-after: auto; }
+.topline { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4mm; }
+.series { color: #167f77; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.page-no { color: #8c9797; font: 700 11px/1 Menlo, monospace; }
+h1 { margin: 0; font-size: 27px; line-height: 1.18; letter-spacing: 0; }
+.subtitle { margin: 2mm 0 5mm; color: #667477; font-size: 13px; }
+.methods { display: grid; gap: 4mm; }
+.methods.two { grid-template-columns: 1fr 1fr; }
+.method { background: white; border: 1px solid #dfe4e1; border-radius: 6px; padding: 4mm; position: relative; }
+.method::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2mm; background: #1b8c81; border-radius: 6px 0 0 6px; }
+.method-head { display: flex; align-items: center; justify-content: space-between; margin-left: 1mm; }
+.method h2 { font-size: 20px; margin: 0; }
+.tag { border-radius: 12px; background: #dff1ed; color: #116f68; padding: 1.2mm 2.4mm; font-size: 9px; font-weight: 700; }
+.paper-title { margin: 1mm 0 3mm 1mm; color: #7a8587; font-size: 9px; line-height: 1.25; }
+.lead { margin: 0 0 2.5mm 1mm; font-size: 12px; line-height: 1.58; }
+ul { margin: 0 0 2.5mm 5mm; padding: 0; font-size: 11px; line-height: 1.5; }
+li { margin-bottom: 1mm; }
+.figure { width: 100%; max-height: 72mm; object-fit: contain; display: block; margin: 2mm auto; background: white; }
+.two .figure { max-height: 49mm; }
+.formula { background: #f1f5f3; border-left: 2px solid #d59a2c; padding: 2mm 3mm; margin: 1.7mm 0; overflow: hidden; font-size: 11px; text-align: center; }
+.source { color: #879091; font-size: 8px; margin-top: 1.5mm; }
+.bottom { position: absolute; left: 13mm; right: 13mm; bottom: 8mm; background: #203337; color: white; border-radius: 5px; padding: 3mm 4mm; font-size: 11px; line-height: 1.45; text-align: center; }
+.accent { color: #d79b29; }
+.two .method h2 { font-size: 17px; }
+.two .lead { font-size: 10.5px; line-height: 1.48; }
+.two ul { font-size: 9.5px; line-height: 1.42; }
+.two .formula { font-size: 9px; padding: 1.5mm 2mm; }
+.two .paper-title { min-height: 8mm; }
+</style>
+  <script>window.MathJax = {tex: {inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }, svg: {fontCache: 'global'}};</script>
+    <script src="../assets/agentic-opd-reconstructed/mathjax-tex-svg-full.js"></script>
+</head>
+<body>
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">01 / 10</span></div>
+              <h1>为什么需要 Agentic OPD？</h1>
+              <div class="subtitle">从整段 token matching，走向错误传播下的 step-wise reliability</div>
+              <div class="methods">
+      <article class="method">
+        <div class="method-head"><h2>SOD</h2><span class="tag">Step reliability</span></div>
+        <div class="paper-title">Step-wise On-policy Distillation for Small Language Model Agents</div>
+        <p class="lead">多轮工具交互中，一个错误 action 会注入大段异常 observation。后续状态逐步离开 Teacher support，统一累加 OPD loss 会把高方差监督当成同等可靠。</p>
+        <ul><li>按模型生成步骤聚合 Student–Teacher log-prob gap，而不是把整条 trajectory 视作同质 token 流。</li><li>前一步分歧变大时降低当前 step 权重；策略恢复时允许权重回升，并限制最大放大幅度。</li><li>核心贡献是 reliability weighting；它仍以 disagreement 作为 proxy，不等价于真实因果责任。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/sod.png" alt="SOD official figure">
+        <div class="formula">\[d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{&lt;t})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{&lt;t})\right|\]</div><div class="formula">\[w_k=\min\!\left(w_1\prod_{u=1}^{k-1}\frac{d_u+\epsilon}{d_{u+1}+\epsilon},\,1+\delta\right)\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.07725">2605.07725v3</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">Agentic OPD 的第一条主线：先判断当前 step 的 Teacher signal 是否还可信。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">02 / 10</span></div>
+              <h1>把 Hindsight 变成 Step-level Credit</h1>
+              <div class="subtitle">StepOPSD：不改变在线 rollout，只在事后重塑 advantage</div>
+              <div class="methods">
+      <article class="method">
+        <div class="method-head"><h2>StepOPSD</h2><span class="tag">Hindsight shaping</span></div>
+        <div class="paper-title">Step-Aware Online Preference Self-Distillation for Agent Reinforcement Learning</div>
+        <p class="lead">Student 仍按原策略与环境交互；rollout 完成后，将轨迹切成 causal action spans，并在加入 hindsight 的 Teacher context 下重评分同一 token。</p>
+        <ul><li>Teacher–Student likelihood gap 提供 dense token preference，但不替换环境给出的 outcome advantage。</li><li>用 advantage 符号决定 gap 的方向，再经过 sigmoid 与 clip 得到有界 credit weight。</li><li>最终只调节 GRPO advantage 的幅度，保留原始 outcome 的正负方向。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/stepopsd.png" alt="StepOPSD official figure">
+        <div class="formula">\[\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,&lt;j})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,&lt;j})\]</div><div class="formula">\[\widetilde A_\ell=(1-\lambda_{\mathrm{mix}})A_\ell+\lambda_{\mathrm{mix}}(w_\ell A_\ell)\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.27140">2605.27140v2</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">变化：Teacher 不再只提供 imitation target，而开始参与 outcome credit 的局部再分配。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">03 / 10</span></div>
+              <h1>让 OPD 感知 Turn 与 Horizon</h1>
+              <div class="subtitle">TurnOPD：训练多深、每个 turn 占多大权重，都由在线统计控制</div>
+              <div class="methods">
+      <article class="method">
+        <div class="method-head"><h2>TurnOPD</h2><span class="tag">Turn-aware horizon</span></div>
+        <div class="paper-title">Making On-Policy Distillation Turn-Aware for Efficient Long-Horizon Agent Training</div>
+        <p class="lead">Vanilla OPD 在长 horizon 中出现外部错配与内部错配：Teacher uncertainty 和 reverse-KL 随 turn 加深，深层 token 又可能在 trajectory normalization 下占据过多 loss。</p>
+        <ul><li>用每 turn KL 与 survivor ratio 估计有效 rollout 深度。</li><li>再用成功轨迹长度分位数给出 coverage lower bound，避免 horizon 过短。</li><li>从 trajectory-normalized loss 渐进切换到 turn-normalized loss，减少长 turn 对梯度的垄断。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/turnopd.png" alt="TurnOPD official figure">
+        <div class="formula">\[H_{\mathrm{ctrl}}=\max(H_{\mathrm{eff}},H_{\mathrm{cov}})\]</div><div class="formula">\[q_t^{\mathrm{blend}}=(1-\alpha)\frac{n_t}{\sum_jn_j}+\alpha\frac1T\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2607.05804">2607.05804v2</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">Agentic OPD 的第二条主线：监督不仅要可信，还要控制暴露到多深的状态分布。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">04 / 10</span></div>
+              <h1>控制 Student 访问的状态分布</h1>
+              <div class="subtitle">从 DAgger 的 Teacher mixing，到 Guided-OPD 的 curriculum turn guidance</div>
+              <div class="methods two">
+      <article class="method">
+        <div class="method-head"><h2>Revisiting DAgger</h2><span class="tag">Mixed-policy rollout</span></div>
+        <div class="paper-title">Revisiting DAgger in the Era of LLM-Agents</div>
+        <p class="lead">仅在 Teacher demonstrations 上 SFT 会遭遇 covariate shift；纯 Student rollout 又会在冷启动时迅速进入无效状态。DAgger 在每个 turn 随机选择 Teacher 或 Student，并收集 Teacher labels。</p>
+        <ul><li>逐 turn mixture 扩大可恢复状态覆盖。</li><li>训练目标仍是 Teacher action 的交叉熵。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/dagger.png" alt="Revisiting DAgger official figure">
+        <div class="formula">\[\mu_i=\beta_i\pi_e+(1-\beta_i)\pi_{\theta_i}\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.12913">2605.12913v1</a> · official paper figure and equations</div>
+      </article>
+    
+      <article class="method">
+        <div class="method-head"><h2>Guided-OPD</h2><span class="tag">Curriculum mixing</span></div>
+        <div class="paper-title">On-Policy Distillation with Curriculum Turn-level Guidance for Multi-turn Agents</div>
+        <p class="lead">Guided-OPD 将 DAgger 式混合嵌入 OPD：训练早期 Teacher turns 较多，随后按 curriculum 衰减到纯 Student on-policy rollout。</p>
+        <ul><li>Teacher turn 使用 forward-KL；Student turn 使用 reverse-KL。</li><li>最终阶段 β=0，与标准 OPD 一致。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/guided-opd.png" alt="Guided-OPD official figure">
+        <div class="formula">\[\mathcal L_t=(1-\beta_t)\mathcal J_{\mathrm{rKL}}^{\pi_\theta}+\beta_t\mathcal J_{\mathrm{fKL}}^{\pi_\phi}\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.15912">2606.15912v3</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">关键取舍：Teacher intervention 改善状态覆盖，但 intervention 后的 history 不再是纯 Student on-policy。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">05 / 10</span></div>
+              <h1>选择性干预与 Offline Prefix Replay</h1>
+              <div class="subtitle">不必在每个 turn 都调用 Teacher，也不必让环境在训练全程保持在线</div>
+              <div class="methods two">
+      <article class="method">
+        <div class="method-head"><h2>SAGE-OPD</h2><span class="tag">Selective intervention</span></div>
+        <div class="paper-title">Selective Agent-Guided Intervention for Multi-Turn On-Policy Distillation</div>
+        <p class="lead">Intervention Agent 依据 Student response、Teacher disagreement 与 confidence，在 Skip / Weak / Strong 三档之间选择。</p>
+        <ul><li>用 Teacher confidence 抑制不可靠干预。</li><li>按实际被监督 token 数归一化，保持 loss scale 稳定。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/sage-opd.png" alt="SAGE-OPD official figure">
+        <div class="formula">\[s_t=i_t c_t,\qquad \mathcal L_{\mathrm{SAGE}}=Z\sum_t s_t\mathcal L_{\mathrm{OPD}}(h_t,a_t)\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.19659">2606.19659v1</a> · official paper figure and equations</div>
+      </article>
+    
+      <article class="method">
+        <div class="method-head"><h2>ReOPD</h2><span class="tag">Offline replay</span></div>
+        <div class="paper-title">Multi-Turn On-Policy Distillation with Prefix Replay</div>
+        <p class="lead">Teacher trajectories 只需离线收集一次；Student training 通过 prefix replay 构造状态，环境无需始终在线，并让较早 step 获得更高权重。</p>
+        <ul><li>用 Student / Teacher occupancy 的 geometric bridge 控制 replay distribution。</li><li>用指数衰减近似长期 distribution-shift cost。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/reopd.png" alt="ReOPD official figure">
+        <div class="formula">\[\rho_t^*(h_t\mid x)\propto[d_t^{\theta_{\mathrm{old}}}]^{\gamma_t}[d_t^T]^{1-\gamma_t},\qquad \omega(t,\kappa)=\kappa^t\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2607.04763">2607.04763v3</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">这一阶段开始同时优化监督质量、Teacher query 成本与 environment availability。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">06 / 10</span></div>
+              <h1>动态 Teacher 信息：从固定答案到 Skill</h1>
+              <div class="subtitle">Skill-SD：Teacher privilege 来自 trajectory analysis，而不是唯一标准路径</div>
+              <div class="methods">
+      <article class="method">
+        <div class="method-head"><h2>Skill-SD</h2><span class="tag">Dynamic privileged context</span></div>
+        <div class="paper-title">Skill-Conditioned Self-Distillation for Multi-turn LLM Agents</div>
+        <p class="lead">Agent task 往往存在多条有效 action path。Skill-SD 将完成轨迹异步总结为 success analysis、mistake analysis 与 golden workflow，并存入 UCB-indexed skill buffer。</p>
+        <ul><li>Student 使用原始 prompt；Teacher 在同一 token prefix 上额外读取检索到的 skills。</li><li>GRPO 提供 task-level credit；importance-weighted SDL 迁移 token-level Teacher distribution。</li><li>动态 Skill 解决 Teacher 应该知道什么，但不直接解决后续 outcome 对早期 action 的因果归因。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/skill-sd.png" alt="Skill-SD official figure">
+        <div class="formula">\[e=\operatorname{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\mathrm{workflow}})\]</div><div class="formula">\[\mathcal L_{\mathrm{total}}=\mathcal L_{\mathrm{GRPO}}+\lambda\mathcal L_{\mathrm{SDL}}\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2604.10674">2604.10674v1</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">Agentic OPD 的第三条主线：privileged information 从静态 oracle 走向随经验演化的可检索技能。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">07 / 10</span></div>
+              <h1>信息不对称：Privileged Teacher 也可能误导</h1>
+              <div class="subtitle">AR-OPD 校准 support mismatch；HINT 把 hindsight 压缩到真正的 decision fork</div>
+              <div class="methods two">
+      <article class="method">
+        <div class="method-head"><h2>AR-OPD</h2><span class="tag">Anchored residual</span></div>
+        <div class="paper-title">Beyond Absolute Imitation: Anchored Residual Guidance for Privileged On-Policy Distillation</div>
+        <p class="lead">Full privileged context 可能让 Teacher 依赖 Student 永远看不到的答案状态。AR-OPD 先构造 partial anchor，再只迁移 full view 相对 anchor 的 residual。</p>
+        <ul><li>Anchor 保留可由 Student 重建的支持。</li><li>λ 控制 privileged residual 强度，避免绝对模仿。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/ar-opd.png" alt="AR-OPD official figure">
+        <div class="formula">\[\log q_\lambda=\log q_{\mathrm{part}}+\lambda(\log q_{\mathrm{full}}-\log q_{\mathrm{part}})-C_t\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.10385">2606.10385v1</a> · official paper figure and equations</div>
+      </article>
+    
+      <article class="method">
+        <div class="method-head"><h2>HINT</h2><span class="tag">Compressed hindsight</span></div>
+        <div class="paper-title">Multi-Turn Agent Self-Distillation with Compressed Hindsight</div>
+        <p class="lead">Reflector 将完整 trajectory outcome 压缩为 turn-level diagnosis 与可选纠正动作，只在识别出的错误 turns 蒸馏。原始长图写作 HERO，但对应论文和方法实际为 HINT。</p>
+        <ul><li>Teacher context 注入 diagnosis，而不是泄露完整参考答案。</li><li>JSD loss 聚焦错误 turn 的 action tokens。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/hint.png" alt="HINT official figure">
+        <div class="formula">\[h_t=(d_t,\hat a^t),\qquad \mathcal L_{\mathrm{HINT}}=\frac1{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.11559">2606.11559v2</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">新问题：Teacher 拥有更多信息不代表它在 Student state 上一定校准良好。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">08 / 10</span></div>
+              <h1>Bayesian Credit：从证据增量到 Turn Advantage</h1>
+              <div class="subtitle">OPPO 给出 token-level value recursion；PBSD 将 privileged evidence 引入长程 Agent</div>
+              <div class="methods two">
+      <article class="method">
+        <div class="method-head"><h2>OPPO</h2><span class="tag">Token Bayesian evidence</span></div>
+        <div class="paper-title">Bayesian Value Recursion for Token-Level Credit Assignment in LLM Reasoning</div>
+        <p class="lead">把每个 token 的 likelihood ratio 视为 Bayesian evidence，递归更新成功概率；相邻 value 的变化就是局部 advantage。</p>
+        <ul><li>Token advantages telescoping 到最终 reward 与初始 value 的差。</li><li>一阶近似把 credit 分解为 uncertainty × evidence。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/oppo.png" alt="OPPO official figure">
+        <div class="formula">\[V_{t+1}=\frac{\lambda_t^*V_t}{\lambda_t^*V_t+(1-V_t)},\qquad A_t=V_{t+1}-V_t\]</div><div class="formula">\[\sum_{t=1}^T A_t=R-V_0\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.21851">2605.21851v2</a> · official paper figure and equations</div>
+      </article>
+    
+      <article class="method">
+        <div class="method-head"><h2>PBSD</h2><span class="tag">Turn Bayesian evidence</span></div>
+        <div class="paper-title">Privileged Bayesian Self-Distillation for Long-Horizon Credit Assignment</div>
+        <p class="lead">比较有/无 privileged outcome information 时当前 action 的 likelihood，得到 turn-level evidence score，再通过 decision gate 调整 sequence advantage。</p>
+        <ul><li>Bayes identity 将 outcome posterior 转换为 trajectory evidence ratio。</li><li>保留 sequence reward 的方向，同时在 turn 内重新分配幅度。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/pbsd.png" alt="PBSD official figure">
+        <div class="formula">\[s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,&lt;t},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,&lt;t})\]</div><div class="formula">\[\widetilde A_{i,t}=w_{i,t}A_i\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.09348">2606.09348v2</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">Bayesian 视角把 Teacher gap 从“模仿误差”改写成“当前动作对成功结论提供了多少证据”。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">09 / 10</span></div>
+              <h1>递归与层级 Credit Assignment</h1>
+              <div class="subtitle">AgentOPSD 用 belief revision 分 turn；CrEST 让 verifier 决定方向、Teacher 只教幅度</div>
+              <div class="methods two">
+      <article class="method">
+        <div class="method-head"><h2>AgentOPSD</h2><span class="tag">Recursive belief</span></div>
+        <div class="paper-title">Recursive Self-Distillation for Agentic Reinforcement Learning</div>
+        <p class="lead">先将 token-level privileged gap 聚合为 turn evidence，再递归更新成功 belief。相邻 belief revision 作为每个 turn 的局部 credit。</p>
+        <ul><li>初始 belief 来自 group success rate。</li><li>最终 turn advantage 与 sequence outcome 符号对齐。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/agentopsd.png" alt="AgentOPSD official figure">
+        <div class="formula">\[e_k=\log\frac{\pi_\theta(a_k\mid s_k,c^+)}{\pi_\theta(a_k\mid s_k)},\qquad \Delta B_k=B_k-B_{k-1}\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2608.05987">2608.05987v1</a> · official paper figure and equations</div>
+      </article>
+    
+      <article class="method">
+        <div class="method-head"><h2>CrEST</h2><span class="tag">Verifier-anchored hierarchy</span></div>
+        <div class="paper-title">Teach the Magnitude, Not the Direction</div>
+        <p class="lead">Teacher disagreement 不应决定更新方向。CrEST 让 environment verifier 提供 turn-level sign，self-teacher 只调节 token-level magnitude。</p>
+        <ul><li>Inter-turn credit 来自 verifier。</li><li>Intra-turn magnitude 由 entropy-gated Teacher gap 提供。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/crest.png" alt="CrEST official figure">
+        <div class="formula">\[\mathcal A_t=A_{[t]}^{\mathrm{turn}}\phi_t,\qquad \phi_t=1+\lambda_t^{\mathrm{eff}}(w_t-1)\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2608.13179">2608.13179v2</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">方向与幅度解耦，是减少 privileged Teacher 误导风险的一条清晰设计原则。</div>
+            </section>
+            
+            <section class="page">
+              <div class="topline"><span class="series">Agentic On-Policy Distillation · 2026.10</span><span class="page-no">10 / 10</span></div>
+              <h1>TASPO：Outcome-Constrained Process Supervision</h1>
+              <div class="subtitle">用 verified successful siblings 构造 trajectory-aligned PI，同时守住 outcome advantage</div>
+              <div class="methods">
+      <article class="method">
+        <div class="method-head"><h2>TASPO</h2><span class="tag">Outcome-constrained redistribution</span></div>
+        <div class="paper-title">Reconciling Process Supervision with Outcome-Based Credit in Agentic Policy Optimization</div>
+        <p class="lead">TASPO 从同任务的 verified successful siblings 提取与当前 trajectory 对齐的 privileged information，在 action level 计算 likelihood shift，并把它转换为有界、均值为 1 的 advantage weights。</p>
+        <ul><li>权重始终为正，不翻转 outcome advantage 的符号。</li><li>每条 trajectory 上权重均值为 1，不改变总体 advantage budget。</li><li>局部 process supervision 只重新分配 credit，不覆盖 verifier 给出的成败结论。</li></ul>
+        <img class="figure" src="../assets/agentic-opd-reconstructed/taspo.png" alt="TASPO official figure">
+        <div class="formula">\[\widetilde A_t^i=A_iw_t^i,\qquad 1-\epsilon_w\le w_t^i\le1+\epsilon_w,\qquad \frac1{T_i}\sum_t w_t^i=1\]</div><div class="formula">\[w_t^i=1+\eta(q_t^i-\bar q_i)\]</div>
+        <div class="source">Primary source: <a href="https://arxiv.org/abs/2608.31077">2608.31077v2</a> · official paper figure and equations</div>
+      </article>
+    </div>
+              <div class="bottom">发展脉络：局部 KL → step reliability → state coverage → dynamic PI → Bayesian/recursive credit → outcome-constrained redistribution。</div>
+            </section>
+            </body>
+</html>
