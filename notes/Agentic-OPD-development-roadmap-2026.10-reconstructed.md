@@ -32,7 +32,7 @@ $$
 - Temporal credit assignment：OPPO、PBSD、AgentOPSD、CrEST、TASPO。
 
 $$
-\text{local matching}\;\neq\;\text{credit for reaching the matched state}
+\mathrm{local\ matching}\;\neq\;\mathrm{credit\ for\ reaching\ the\ matched\ state}
 $$
 
 > **本页结论：** 读图方式：后续方法分别回答“监督是否可信、状态如何覆盖、Teacher 知道什么、结果如何回传”。
@@ -57,7 +57,7 @@ $$
 ![SOD 官方方法图](../assets/agentic-opd-reconstructed/sod.png)
 
 $$
-\Delta_k=\frac1{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1})\right)
+\Delta_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1})\right)
 $$
 
 $$
@@ -94,7 +94,7 @@ $$
 $$
 
 $$
-w_\ell=\Pi_{[1-\alpha_{\mathrm{clip}},\,1+\alpha_{\mathrm{clip}}]}\!\left(2\sigma(\operatorname{sign}(A_\ell)\Delta_\ell)\right)
+w_\ell=\Pi_{[1-\alpha_{\mathrm{clip}},\,1+\alpha_{\mathrm{clip}}]}\!\left(2\sigma(\mathrm{sign}(A_\ell)\Delta_\ell)\right)
 $$
 
 $$
@@ -131,7 +131,7 @@ $$
 $$
 
 $$
-q_t^{\mathrm{blend}}=(1-\alpha)\frac{n_t}{\sum_jn_j}+\alpha\frac1T,\qquad H_{\mathrm{cov}}=Q^p(L_{\mathrm{succ}})
+q_t^{\mathrm{blend}}=(1-\alpha)\frac{n_t}{\sum_jn_j}+\alpha\frac{1}{T},\qquad H_{\mathrm{cov}}=Q^p(L_{\mathrm{succ}})
 $$
 
 > **本页结论：** Agentic OPD 的第二条主线：监督不仅要可信，还要控制暴露到多深的状态分布。
@@ -175,11 +175,11 @@ Guided-OPD 将 DAgger 式混合嵌入 OPD：训练早期 Teacher turns 较多，
 ![Guided-OPD 官方方法图](../assets/agentic-opd-reconstructed/guided-opd.png)
 
 $$
-a_t\sim\begin{cases}\pi_\theta(\cdot\mid h_t),&1-\beta_t\\\pi_\phi(\cdot\mid h_t),&\beta_t\end{cases}
+a_t\sim\pi_\theta(\cdot\mid h_t)\;[1-\beta_t],\qquad a_t\sim\pi_\phi(\cdot\mid h_t)\;[\beta_t]
 $$
 
 $$
-\beta_t=\beta_{\mathrm{start}}+(\beta_{\mathrm{end}}-\beta_{\mathrm{start}})\frac{1-\cos(\pi\xi_t)}2
+\beta_t=\beta_{\mathrm{start}}+(\beta_{\mathrm{end}}-\beta_{\mathrm{start}})\frac{1-\cos(\pi\xi_t)}{2}
 $$
 
 $$
@@ -207,7 +207,7 @@ Intervention Agent 依据 Student response、Teacher disagreement 与 confidence
 ![SAGE-OPD 官方方法图](../assets/agentic-opd-reconstructed/sage-opd.png)
 
 $$
-c_t=\frac1{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,1:i-1})
+c_t=\frac{1}{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,1:i-1})
 $$
 
 $$
@@ -231,7 +231,7 @@ Teacher trajectories 只需离线收集一次；Student training 通过 prefix r
 ![ReOPD 官方方法图](../assets/agentic-opd-reconstructed/reopd.png)
 
 $$
-\rho_t^*(h_t\mid x)\propto[d_t^{\theta_{\mathrm{old}}}(h_t\mid x)]^{\gamma_t}[d_t^T(h_t\mid x)]^{1-\gamma_t}
+\rho_t^{\star}(h_t\mid x)\propto[d_t^{\theta_{\mathrm{old}}}(h_t\mid x)]^{\gamma_t}[d_t^T(h_t\mid x)]^{1-\gamma_t}
 $$
 
 $$
@@ -264,7 +264,7 @@ Agent task 往往存在多条有效 action path。Skill-SD 将完成轨迹异步
 ![Skill-SD 官方方法图](../assets/agentic-opd-reconstructed/skill-sd.png)
 
 $$
-e=\operatorname{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\mathrm{workflow}})
+e=\mathrm{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\mathrm{workflow}})
 $$
 
 $$
@@ -272,7 +272,7 @@ $$
 $$
 
 $$
-\mathcal L_{\mathrm{SDL}}=\frac1N\sum_{i,t}\rho_{i,t}^{\mathrm{on}}\left(e^{-\ell_{i,t}}-1+\ell_{i,t}\right)
+\mathcal L_{\mathrm{SDL}}=\frac{1}{N}\sum_{i,t}\rho_{i,t}^{\mathrm{on}}\left(e^{-\ell_{i,t}}-1+\ell_{i,t}\right)
 $$
 
 $$
@@ -300,7 +300,7 @@ Full privileged context 可能让 Teacher 依赖 Student 永远看不到的答�
 ![AR-OPD 官方方法图](../assets/agentic-opd-reconstructed/ar-opd.png)
 
 $$
-M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)\lt\tau}\pi_{\mathrm{priv}}(v\mid s)
+M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)\le\tau}\pi_{\mathrm{priv}}(v\mid s)
 $$
 
 $$
@@ -320,15 +320,15 @@ Reflector 将完整 trajectory outcome 压缩为 turn-level diagnosis 与可选�
 ![HINT 官方方法图](../assets/agentic-opd-reconstructed/hint.png)
 
 $$
-h_t=(d_t,\hat a^t),\qquad q_t=\operatorname{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{1:t-1},h_t)]
+h_t=(d_t,\hat a^{t}),\qquad q_t=\mathrm{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{1:t-1},h_t)]
 $$
 
 $$
-D_{\mathrm{JSD}}(p_t,q_t)=\tfrac12D_{\mathrm{KL}}(p_t\|m_t)+\tfrac12D_{\mathrm{KL}}(q_t\|m_t)
+D_{\mathrm{JSD}}(p_t,q_t)=\tfrac{1}{2}D_{\mathrm{KL}}(p_t\|m_t)+\tfrac{1}{2}D_{\mathrm{KL}}(q_t\|m_t)
 $$
 
 $$
-\mathcal L_{\mathrm{HINT}}=\frac1{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t
+\mathcal L_{\mathrm{HINT}}=\frac{1}{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t
 $$
 
 > **本页结论：** 新问题：Teacher 拥有更多信息不代表它在 Student state 上一定校准良好。
@@ -352,15 +352,15 @@ OPPO 给出 token-level value recursion；PBSD 将 privileged evidence 引入长
 ![OPPO 官方方法图](../assets/agentic-opd-reconstructed/oppo.png)
 
 $$
-V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^*=\frac{P(y_t\mid x,y_{1:t-1},R=1)}{P(y_t\mid x,y_{1:t-1},R=0)}
+V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^{\star}=\frac{P(y_t\mid x,y_{1:t-1},R=1)}{P(y_t\mid x,y_{1:t-1},R=0)}
 $$
 
 $$
-V_{t+1}=\frac{\lambda_t^*V_t}{\lambda_t^*V_t+(1-V_t)},\qquad A_t^{\mathrm{raw}}=V_{t+1}-V_t
+V_{t+1}=\frac{\lambda_t^{\star}V_t}{\lambda_t^{\star}V_t+(1-V_t)},\qquad A_t^{\mathrm{raw}}=V_{t+1}-V_t
 $$
 
 $$
-\widehat A_{i,t}=\operatorname{sign}(A_i^{\mathrm{seq}})|A_{i,t}^{\mathrm{raw}}|,\qquad \sum_t A_t=R-V_0
+\widehat A_{i,t}=\mathrm{sign}(A_i^{\mathrm{seq}})|A_{i,t}^{\mathrm{raw}}|,\qquad \sum_t A_t=R-V_0
 $$
 
 ### PBSD
@@ -376,15 +376,15 @@ $$
 ![PBSD 官方方法图](../assets/agentic-opd-reconstructed/pbsd.png)
 
 $$
-S_i=\log\frac{p(y^*\mid x_i,\tau_i)}{p(y^*\mid x_i)}=\sum_t s_{i,t}
+S_i=\log\frac{p(y^{\star}\mid x_i,\tau_i)}{p(y^{\star}\mid x_i)}=\sum_t s_{i,t}
 $$
 
 $$
-s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1})
+s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1},y^{\star})-\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1})
 $$
 
 $$
-\widetilde A_{i,t}=w_{i,t}A_i,\quad w_{i,t}=1+\operatorname{sign}(A_i)\operatorname{clip}\!\left(\tanh\frac{s_{i,t}}\delta,-c,c\right)
+\widetilde A_{i,t}=w_{i,t}A_i,\quad w_{i,t}=1+\mathrm{sign}(A_i)\mathrm{clip}\!\left(\tanh\frac{s_{i,t}}{\delta},-c,c\right)
 $$
 
 > **本页结论：** Bayesian 视角把 Teacher gap 从“模仿误差”改写成“当前动作对成功结论提供了多少证据”。
@@ -408,11 +408,11 @@ AgentOPSD 用 belief revision 分 turn；CrEST 让 verifier 决定方向、Teach
 ![AgentOPSD 官方方法图](../assets/agentic-opd-reconstructed/agentopsd.png)
 
 $$
-e_k=\log\frac{\pi_\theta(a_k\mid s_k,c^+)}{\pi_\theta(a_k\mid s_k)},\qquad c_k=\gamma c_{k-1}+e_k
+e_k=\log\frac{\pi_\theta(a_k\mid s_k,c^{+})}{\pi_\theta(a_k\mid s_k)},\qquad c_k=\gamma c_{k-1}+e_k
 $$
 
 $$
-\ell_k=\operatorname{logit}(B_0)+c_k,\qquad B_k=\sigma(\ell_k)
+\ell_k=\mathrm{logit}(B_0)+c_k,\qquad B_k=\sigma(\ell_k)
 $$
 
 $$
@@ -436,11 +436,11 @@ $$
 $$
 
 $$
-w_t=\operatorname{clip}\!\left(\exp(\operatorname{sign}(A_{[t]}^{\mathrm{turn}})\Delta_t),1-\epsilon,1+\epsilon\right)
+w_t=\mathrm{clip}\!\left(\exp(\mathrm{sign}(A_{[t]}^{\mathrm{turn}})\Delta_t),1-\epsilon,1+\epsilon\right)
 $$
 
 $$
-\lambda_t^{\mathrm{eff}}=\operatorname{clip}(\lambda g_t^{\mathrm{dir}}m_t^{\mathrm{ent}},0,\lambda)
+\lambda_t^{\mathrm{eff}}=\mathrm{clip}(\lambda g_t^{\mathrm{dir}}m_t^{\mathrm{ent}},0,\lambda)
 $$
 
 > **本页结论：** 方向与幅度解耦，是减少 privileged Teacher 误导风险的一条清晰设计原则。
@@ -464,15 +464,15 @@ TASPO 从同任务的 verified successful siblings 提取与当前 trajectory �
 ![TASPO 官方方法图](../assets/agentic-opd-reconstructed/taspo.png)
 
 $$
-\widetilde A_t^i=A_iw_t^i,\qquad 1-\epsilon_w\le w_t^i\le1+\epsilon_w,\qquad \frac1{T_i}\sum_t w_t^i=1
+\widetilde A_t^i=A_iw_t^i,\qquad 1-\epsilon_w\le w_t^i\le1+\epsilon_w,\qquad \frac{1}{T_i}\sum_t w_t^i=1
 $$
 
 $$
-\Delta_{t,k}^i=\operatorname{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,1:k-1}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,1:k-1}^i)]
+\Delta_{t,k}^i=\mathrm{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,1:k-1}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,1:k-1}^i)]
 $$
 
 $$
-q_t^i=\tanh\!\left(\frac{\operatorname{sign}(A_i)\bar d_t^i}{\tau}\right)
+q_t^i=\tanh\!\left(\frac{\mathrm{sign}(A_i)\bar d_t^i}{\tau}\right)
 $$
 
 $$

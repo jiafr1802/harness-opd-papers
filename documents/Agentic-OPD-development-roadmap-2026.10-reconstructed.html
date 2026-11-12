@@ -67,7 +67,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">2026 年的 Agentic OPD 工作并不是沿一条线演进，而是在四个相互耦合的问题上同时推进。</p>
         <ul><li>监督与 credit 粒度：SOD、StepOPSD、TurnOPD。</li><li>Covariate shift 与状态覆盖：Revisiting DAgger、Guided-OPD、SAGE-OPD、ReOPD。</li><li>Privileged information asymmetry：Skill-SD、AR-OPD、HINT。</li><li>Temporal credit assignment：OPPO、PBSD、AgentOPSD、CrEST、TASPO。</li></ul>
         
-        <div class="formula">\[\text{local matching}\;\neq\;\text{credit for reaching the matched state}\]</div>
+        <div class="formula">\[\mathrm{local\ matching}\;\neq\;\mathrm{credit\ for\ reaching\ the\ matched\ state}\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2604.00626">2604.00626v5</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -85,7 +85,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">多轮工具交互中，一个错误 action 会注入大段异常 observation。后续状态逐步离开 Teacher support，统一累加 OPD loss 会把高方差监督当成同等可靠。</p>
         <ul><li>按模型生成步骤聚合 Student–Teacher log-prob gap，而不是把整条 trajectory 视作同质 token 流。</li><li>前一步分歧变大时降低当前 step 权重；策略恢复时允许权重回升，并限制最大放大幅度。</li><li>I_k 是第 k 个生成步骤的 token 集合；论文使用 ε=10⁻⁶ 稳定比值，并以 δ 限制最大放大幅度。</li><li>核心贡献是 reliability weighting；它仍以 disagreement 作为 proxy，不等价于真实因果责任。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/sod.png" alt="SOD official figure">
-        <div class="formula">\[\Delta_k=\frac1{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1})\right)\]</div><div class="formula">\[d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{1:t-1})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{1:t-1})\right|\]</div><div class="formula">\[w_k=\min\!\left(w_1\prod_{u=1}^{k-1}\frac{d_u+\epsilon}{d_{u+1}+\epsilon},\,1+\delta\right)\]</div>
+        <div class="formula">\[\Delta_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}D_{\mathrm{KL}}\!\left(\pi_\theta(\cdot\mid y_{1:t-1})\,\|\,\pi_T(\cdot\mid y_{1:t-1})\right)\]</div><div class="formula">\[d_k=\frac{1}{|\mathcal I_k|}\sum_{t\in\mathcal I_k}\left|\log\pi_\theta(y_t\mid y_{1:t-1})-\log\pi_{\mathrm{teacher}}(y_t\mid y_{1:t-1})\right|\]</div><div class="formula">\[w_k=\min\!\left(w_1\prod_{u=1}^{k-1}\frac{d_u+\epsilon}{d_{u+1}+\epsilon},\,1+\delta\right)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.07725">2605.07725v3</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -103,7 +103,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Student 仍按原策略与环境交互；rollout 完成后，将轨迹切成 causal action spans，并在加入 hindsight 的 Teacher context 下重评分同一 token。</p>
         <ul><li>Teacher–Student likelihood gap 提供 dense token preference，但不替换环境给出的 outcome advantage。</li><li>用 advantage 符号决定 gap 的方向，再经过 sigmoid 与 clip 得到有界 credit weight。</li><li>每个 step 单独归一化到相同 contribution budget，避免长 action 因 token 更多而占据更大梯度。</li><li>最终只调节 GRPO advantage 的幅度，保留原始 outcome 的正负方向；GRPO update 本身不变。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/stepopsd.png" alt="StepOPSD official figure">
-        <div class="formula">\[\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,1:j-1})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,1:j-1})\]</div><div class="formula">\[w_\ell=\Pi_{[1-\alpha_{\mathrm{clip}},\,1+\alpha_{\mathrm{clip}}]}\!\left(2\sigma(\operatorname{sign}(A_\ell)\Delta_\ell)\right)\]</div><div class="formula">\[\widetilde A_\ell=(1-\lambda_{\mathrm{mix}})A_\ell+\lambda_{\mathrm{mix}}(w_\ell A_\ell)\]</div>
+        <div class="formula">\[\Delta_{k,j}=\log\pi_T(z_{k,j}\mid c_k^T,z_{k,1:j-1})-\log\pi_S(z_{k,j}\mid c_k^S,z_{k,1:j-1})\]</div><div class="formula">\[w_\ell=\Pi_{[1-\alpha_{\mathrm{clip}},\,1+\alpha_{\mathrm{clip}}]}\!\left(2\sigma(\mathrm{sign}(A_\ell)\Delta_\ell)\right)\]</div><div class="formula">\[\widetilde A_\ell=(1-\lambda_{\mathrm{mix}})A_\ell+\lambda_{\mathrm{mix}}(w_\ell A_\ell)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.27140">2605.27140v2</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -121,7 +121,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Vanilla OPD 在长 horizon 中出现外部错配与内部错配：Teacher uncertainty 和 reverse-KL 随 turn 加深，深层 token 又可能在 trajectory normalization 下占据过多 loss。</p>
         <ul><li>用每 turn KL 与 survivor ratio 估计有效 rollout 深度。</li><li>再用成功轨迹长度分位数给出 coverage lower bound，避免 horizon 过短。</li><li>从 token/trajectory-normalized loss 线性切换到 turn-normalized loss，减少长 turn 对梯度的垄断。</li><li>论文同时优化收集多少 rounds 与如何分配 loss，并报告最高约 2.29× 的训练加速。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/turnopd.png" alt="TurnOPD official figure">
-        <div class="formula">\[H_{\mathrm{ctrl}}=\max(H_{\mathrm{eff}},H_{\mathrm{cov}})\]</div><div class="formula">\[\mathcal L_{\mathrm{mix}}=(1-\alpha)\mathcal L_{\mathrm{token}}+\alpha\mathcal L_{\mathrm{round}}\]</div><div class="formula">\[q_t^{\mathrm{blend}}=(1-\alpha)\frac{n_t}{\sum_jn_j}+\alpha\frac1T,\qquad H_{\mathrm{cov}}=Q^p(L_{\mathrm{succ}})\]</div>
+        <div class="formula">\[H_{\mathrm{ctrl}}=\max(H_{\mathrm{eff}},H_{\mathrm{cov}})\]</div><div class="formula">\[\mathcal L_{\mathrm{mix}}=(1-\alpha)\mathcal L_{\mathrm{token}}+\alpha\mathcal L_{\mathrm{round}}\]</div><div class="formula">\[q_t^{\mathrm{blend}}=(1-\alpha)\frac{n_t}{\sum_jn_j}+\alpha\frac{1}{T},\qquad H_{\mathrm{cov}}=Q^p(L_{\mathrm{succ}})\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2607.05804">2607.05804v2</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -149,7 +149,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Guided-OPD 将 DAgger 式混合嵌入 OPD：训练早期 Teacher turns 较多，随后按 curriculum 衰减到纯 Student on-policy rollout。</p>
         <ul><li>Teacher turn 使用 forward-KL；Student turn 使用 reverse-KL。</li><li>Early guidance 把轨迹锚定在 Teacher 熟悉区域，随后逐步增加 Student turns。</li><li>最终阶段 β=0，与标准 OPD 一致。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/guided-opd.png" alt="Guided-OPD official figure">
-        <div class="formula">\[a_t\sim\begin{cases}\pi_\theta(\cdot\mid h_t),&amp;1-\beta_t\\\pi_\phi(\cdot\mid h_t),&amp;\beta_t\end{cases}\]</div><div class="formula">\[\beta_t=\beta_{\mathrm{start}}+(\beta_{\mathrm{end}}-\beta_{\mathrm{start}})\frac{1-\cos(\pi\xi_t)}2\]</div><div class="formula">\[\mathcal L_t=(1-\beta_t)\mathcal J_{\mathrm{rKL}}^{\pi_\theta}+\beta_t\mathcal J_{\mathrm{fKL}}^{\pi_\phi}\]</div>
+        <div class="formula">\[a_t\sim\pi_\theta(\cdot\mid h_t)\;[1-\beta_t],\qquad a_t\sim\pi_\phi(\cdot\mid h_t)\;[\beta_t]\]</div><div class="formula">\[\beta_t=\beta_{\mathrm{start}}+(\beta_{\mathrm{end}}-\beta_{\mathrm{start}})\frac{1-\cos(\pi\xi_t)}{2}\]</div><div class="formula">\[\mathcal L_t=(1-\beta_t)\mathcal J_{\mathrm{rKL}}^{\pi_\theta}+\beta_t\mathcal J_{\mathrm{fKL}}^{\pi_\phi}\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.15912">2606.15912v3</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -167,7 +167,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Intervention Agent 依据 Student response、Teacher disagreement 与 confidence，在 Skip / Weak / Strong 三档之间选择。</p>
         <ul><li>Intervention intensity 为 0 / α / 1，分别对应 Skip / Weak / Strong。</li><li>Teacher confidence 沿 Student action prefix 聚合，抑制低置信 Teacher 的干预。</li><li>按实际被监督 token 数归一化，保持 loss scale 稳定。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/sage-opd.png" alt="SAGE-OPD official figure">
-        <div class="formula">\[c_t=\frac1{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,1:i-1})\]</div><div class="formula">\[i_t\in\{0,\alpha,1\},\qquad s_t=i_tc_t\]</div><div class="formula">\[\mathcal L_{\mathrm{SAGE}}=Z\sum_t s_t\mathcal L_{\mathrm{OPD}}(h_t,a_t)\]</div>
+        <div class="formula">\[c_t=\frac{1}{|a_t|}\sum_{i=1}^{|a_t|}\max_{v\in\mathcal V}\pi_\phi(v\mid h_t,a_{t,1:i-1})\]</div><div class="formula">\[i_t\in\{0,\alpha,1\},\qquad s_t=i_tc_t\]</div><div class="formula">\[\mathcal L_{\mathrm{SAGE}}=Z\sum_t s_t\mathcal L_{\mathrm{OPD}}(h_t,a_t)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.19659">2606.19659v1</a> · official paper figure and equations</div>
       </article>
     
@@ -177,7 +177,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Teacher trajectories 只需离线收集一次；Student training 通过 prefix replay 构造状态，环境无需始终在线，并让较早 step 获得更高权重。</p>
         <ul><li>用 Student / Teacher occupancy 的 geometric bridge 控制 replay distribution。</li><li>γ_t 平衡 Student occupancy mismatch 与 Teacher prefix reliability，避免 prefix trap。</li><li>Teacher-prefix 与 Student-prefix 样本分别用相反方向的 density ratio 校正；指数衰减近似长期 cost。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/reopd.png" alt="ReOPD official figure">
-        <div class="formula">\[\rho_t^*(h_t\mid x)\propto[d_t^{\theta_{\mathrm{old}}}(h_t\mid x)]^{\gamma_t}[d_t^T(h_t\mid x)]^{1-\gamma_t}\]</div><div class="formula">\[\gamma_t=\frac{\lambda_{\mathrm{stu},t}}{\lambda_{\mathrm{stu},t}+\lambda_{\mathrm{tea},t}},\quad w_t^T\propto\left(\frac{d_{\mathrm{old}}^t}{d_T^t}\right)^{\gamma_t}\]</div><div class="formula">\[\omega(t,\kappa)=\kappa^t\]</div>
+        <div class="formula">\[\rho_t^{\star}(h_t\mid x)\propto[d_t^{\theta_{\mathrm{old}}}(h_t\mid x)]^{\gamma_t}[d_t^T(h_t\mid x)]^{1-\gamma_t}\]</div><div class="formula">\[\gamma_t=\frac{\lambda_{\mathrm{stu},t}}{\lambda_{\mathrm{stu},t}+\lambda_{\mathrm{tea},t}},\quad w_t^T\propto\left(\frac{d_{\mathrm{old}}^t}{d_T^t}\right)^{\gamma_t}\]</div><div class="formula">\[\omega(t,\kappa)=\kappa^t\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2607.04763">2607.04763v3</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -195,7 +195,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Agent task 往往存在多条有效 action path。Skill-SD 将完成轨迹异步总结为 success analysis、mistake analysis 与 golden workflow，并存入 UCB-indexed skill buffer。</p>
         <ul><li>Student 使用原始 prompt；Teacher 在同一 token prefix 上额外读取检索到的 skills。</li><li>GRPO 提供 task-level credit；importance-weighted SDL 迁移 token-level Teacher distribution。</li><li>Skill 由异步 summarizer 生成，并通过 UCB top-scoring buffer 在探索新技能与复用高价值技能之间平衡。</li><li>动态 Skill 解决 Teacher 应该知道什么，但不直接解决后续 outcome 对早期 action 的因果归因。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/skill-sd.png" alt="Skill-SD official figure">
-        <div class="formula">\[e=\operatorname{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\mathrm{workflow}})\]</div><div class="formula">\[\ell_{i,t}=\log\pi_\theta^{\mathrm{stu}}(y_{i,t}\mid x,y_{i,1:t-1})-\log\pi_{\bar\theta}^{\mathrm{tea}}(y_{i,t}\mid x,S(x),y_{i,1:t-1})\]</div><div class="formula">\[\mathcal L_{\mathrm{SDL}}=\frac1N\sum_{i,t}\rho_{i,t}^{\mathrm{on}}\left(e^{-\ell_{i,t}}-1+\ell_{i,t}\right)\]</div><div class="formula">\[\mathcal L_{\mathrm{total}}=\mathcal L_{\mathrm{GRPO}}+\lambda\mathcal L_{\mathrm{SDL}}\]</div>
+        <div class="formula">\[e=\mathrm{Analyze}(\tau,x)=(e_{\mathrm{success}},e_{\mathrm{mistake}},e_{\mathrm{workflow}})\]</div><div class="formula">\[\ell_{i,t}=\log\pi_\theta^{\mathrm{stu}}(y_{i,t}\mid x,y_{i,1:t-1})-\log\pi_{\bar\theta}^{\mathrm{tea}}(y_{i,t}\mid x,S(x),y_{i,1:t-1})\]</div><div class="formula">\[\mathcal L_{\mathrm{SDL}}=\frac{1}{N}\sum_{i,t}\rho_{i,t}^{\mathrm{on}}\left(e^{-\ell_{i,t}}-1+\ell_{i,t}\right)\]</div><div class="formula">\[\mathcal L_{\mathrm{total}}=\mathcal L_{\mathrm{GRPO}}+\lambda\mathcal L_{\mathrm{SDL}}\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2604.10674">2604.10674v1</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -213,7 +213,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Full privileged context 可能让 Teacher 依赖 Student 永远看不到的答案状态。AR-OPD 先构造 partial anchor，再只迁移 full view 相对 anchor 的 residual。</p>
         <ul><li>Anchor 保留可由 Student 重建的支持。</li><li>M_out 衡量 privileged Teacher 落到 Student 低支持 token 上的概率质量。</li><li>λ 控制 privileged residual 强度，避免把 oracle shortcut 当作绝对模仿目标。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/ar-opd.png" alt="AR-OPD official figure">
-        <div class="formula">\[M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)\lt\tau}\pi_{\mathrm{priv}}(v\mid s)\]</div><div class="formula">\[\log q_\lambda=\log q_{\mathrm{part}}+\lambda(\log q_{\mathrm{full}}-\log q_{\mathrm{part}})-C_t\]</div>
+        <div class="formula">\[M_\tau^{\mathrm{out}}=\sum_{v:\,\pi_{\mathrm{stu}}(v\mid s)\le\tau}\pi_{\mathrm{priv}}(v\mid s)\]</div><div class="formula">\[\log q_\lambda=\log q_{\mathrm{part}}+\lambda(\log q_{\mathrm{full}}-\log q_{\mathrm{part}})-C_t\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.10385">2606.10385v1</a> · official paper figure and equations</div>
       </article>
     
@@ -223,7 +223,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Reflector 将完整 trajectory outcome 压缩为 turn-level diagnosis 与可选纠正动作，只在识别出的错误 turns 蒸馏。原始长图写作 HERO，但对应论文和方法实际为 HINT。</p>
         <ul><li>Teacher context 注入 diagnosis，而不是泄露完整参考答案。</li><li>Reflector 将终局反馈拆成每个错误 turn 的 diagnosis 与可选纠正 action。</li><li>使用对称、有界的 JSD，并只在识别出的错误 turns 上聚合。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/hint.png" alt="HINT official figure">
-        <div class="formula">\[h_t=(d_t,\hat a^t),\qquad q_t=\operatorname{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{1:t-1},h_t)]\]</div><div class="formula">\[D_{\mathrm{JSD}}(p_t,q_t)=\tfrac12D_{\mathrm{KL}}(p_t\|m_t)+\tfrac12D_{\mathrm{KL}}(q_t\|m_t)\]</div><div class="formula">\[\mathcal L_{\mathrm{HINT}}=\frac1{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t\]</div>
+        <div class="formula">\[h_t=(d_t,\hat a^{t}),\qquad q_t=\mathrm{sg}[\pi_{\bar\theta}(\cdot\mid x,y_{1:t-1},h_t)]\]</div><div class="formula">\[D_{\mathrm{JSD}}(p_t,q_t)=\tfrac{1}{2}D_{\mathrm{KL}}(p_t\|m_t)+\tfrac{1}{2}D_{\mathrm{KL}}(q_t\|m_t)\]</div><div class="formula">\[\mathcal L_{\mathrm{HINT}}=\frac{1}{|I(\tau)|}\sum_{t\in I(\tau)}\ell_t\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.11559">2606.11559v2</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -241,7 +241,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">把每个 token 的 likelihood ratio 视为 Bayesian evidence，递归更新成功概率；相邻 value 的变化就是局部 advantage。</p>
         <ul><li>λ_t* 是成功条件与失败条件下当前 token likelihood 的 Bayes factor。</li><li>Token advantages telescoping 到最终 reward 与初始 value 的差。</li><li>一阶近似把 credit 分解为 uncertainty × evidence，并用 sequence outcome 符号校准方向。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/oppo.png" alt="OPPO official figure">
-        <div class="formula">\[V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^*=\frac{P(y_t\mid x,y_{1:t-1},R=1)}{P(y_t\mid x,y_{1:t-1},R=0)}\]</div><div class="formula">\[V_{t+1}=\frac{\lambda_t^*V_t}{\lambda_t^*V_t+(1-V_t)},\qquad A_t^{\mathrm{raw}}=V_{t+1}-V_t\]</div><div class="formula">\[\widehat A_{i,t}=\operatorname{sign}(A_i^{\mathrm{seq}})|A_{i,t}^{\mathrm{raw}}|,\qquad \sum_t A_t=R-V_0\]</div>
+        <div class="formula">\[V_t=P(R=1\mid x,y_{1:t-1}),\qquad \lambda_t^{\star}=\frac{P(y_t\mid x,y_{1:t-1},R=1)}{P(y_t\mid x,y_{1:t-1},R=0)}\]</div><div class="formula">\[V_{t+1}=\frac{\lambda_t^{\star}V_t}{\lambda_t^{\star}V_t+(1-V_t)},\qquad A_t^{\mathrm{raw}}=V_{t+1}-V_t\]</div><div class="formula">\[\widehat A_{i,t}=\mathrm{sign}(A_i^{\mathrm{seq}})|A_{i,t}^{\mathrm{raw}}|,\qquad \sum_t A_t=R-V_0\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2605.21851">2605.21851v2</a> · official paper figure and equations</div>
       </article>
     
@@ -251,7 +251,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">比较有/无 privileged outcome information 时当前 action 的 likelihood，得到 turn-level evidence score，再通过 decision gate 调整 sequence advantage。</p>
         <ul><li>Bayes identity 将 outcome posterior 转换为 trajectory evidence ratio，并分解为 turn evidence。</li><li>成功轨迹可能含坏动作、失败轨迹也可能含好动作；binary reward 无法表达这种局部差异。</li><li>有界 tanh 权重保留 sequence reward 的方向，同时在 turn 内重新分配幅度。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/pbsd.png" alt="PBSD official figure">
-        <div class="formula">\[S_i=\log\frac{p(y^*\mid x_i,\tau_i)}{p(y^*\mid x_i)}=\sum_t s_{i,t}\]</div><div class="formula">\[s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1},y^*)-\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1})\]</div><div class="formula">\[\widetilde A_{i,t}=w_{i,t}A_i,\quad w_{i,t}=1+\operatorname{sign}(A_i)\operatorname{clip}\!\left(\tanh\frac{s_{i,t}}\delta,-c,c\right)\]</div>
+        <div class="formula">\[S_i=\log\frac{p(y^{\star}\mid x_i,\tau_i)}{p(y^{\star}\mid x_i)}=\sum_t s_{i,t}\]</div><div class="formula">\[s_{i,t}=\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1},y^{\star})-\log p(a_{i,t}\mid x_i,\tau_{i,1:t-1})\]</div><div class="formula">\[\widetilde A_{i,t}=w_{i,t}A_i,\quad w_{i,t}=1+\mathrm{sign}(A_i)\mathrm{clip}\!\left(\tanh\frac{s_{i,t}}{\delta},-c,c\right)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2606.09348">2606.09348v2</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -269,7 +269,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">先将 token-level privileged gap 聚合为 turn evidence，再递归更新成功 belief。相邻 belief revision 作为每个 turn 的局部 credit。</p>
         <ul><li>初始 belief B₀ 来自 clipped group success rate。</li><li>γ 对历史 evidence 做递归折扣，避免早期信号永久主导。</li><li>belief sensitivity B(1−B) 在模型最不确定时放大证据，最终 credit 与 sequence outcome 符号对齐。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/agentopsd.png" alt="AgentOPSD official figure">
-        <div class="formula">\[e_k=\log\frac{\pi_\theta(a_k\mid s_k,c^+)}{\pi_\theta(a_k\mid s_k)},\qquad c_k=\gamma c_{k-1}+e_k\]</div><div class="formula">\[\ell_k=\operatorname{logit}(B_0)+c_k,\qquad B_k=\sigma(\ell_k)\]</div><div class="formula">\[\Delta B_k\approx B_{k-1}(1-B_{k-1})\left(e_k-(1-\gamma)c_{k-1}\right)\]</div>
+        <div class="formula">\[e_k=\log\frac{\pi_\theta(a_k\mid s_k,c^{+})}{\pi_\theta(a_k\mid s_k)},\qquad c_k=\gamma c_{k-1}+e_k\]</div><div class="formula">\[\ell_k=\mathrm{logit}(B_0)+c_k,\qquad B_k=\sigma(\ell_k)\]</div><div class="formula">\[\Delta B_k\approx B_{k-1}(1-B_{k-1})\left(e_k-(1-\gamma)c_{k-1}\right)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2608.05987">2608.05987v1</a> · official paper figure and equations</div>
       </article>
     
@@ -279,7 +279,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">Teacher disagreement 不应决定更新方向。CrEST 让 environment verifier 提供 turn-level sign，self-teacher 只调节 token-level magnitude。</p>
         <ul><li>Inter-turn credit 的方向来自 environment verifier。</li><li>Intra-turn magnitude 由 entropy-gated Teacher gap 提供。</li><li>只有 Teacher preference 与 verifier direction 一致时才开启 modulation，并通过 clip 防止梯度集中。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/crest.png" alt="CrEST official figure">
-        <div class="formula">\[\mathcal A_t=A_{[t]}^{\mathrm{turn}}\phi_t,\qquad \phi_t=1+\lambda_t^{\mathrm{eff}}(w_t-1)\]</div><div class="formula">\[w_t=\operatorname{clip}\!\left(\exp(\operatorname{sign}(A_{[t]}^{\mathrm{turn}})\Delta_t),1-\epsilon,1+\epsilon\right)\]</div><div class="formula">\[\lambda_t^{\mathrm{eff}}=\operatorname{clip}(\lambda g_t^{\mathrm{dir}}m_t^{\mathrm{ent}},0,\lambda)\]</div>
+        <div class="formula">\[\mathcal A_t=A_{[t]}^{\mathrm{turn}}\phi_t,\qquad \phi_t=1+\lambda_t^{\mathrm{eff}}(w_t-1)\]</div><div class="formula">\[w_t=\mathrm{clip}\!\left(\exp(\mathrm{sign}(A_{[t]}^{\mathrm{turn}})\Delta_t),1-\epsilon,1+\epsilon\right)\]</div><div class="formula">\[\lambda_t^{\mathrm{eff}}=\mathrm{clip}(\lambda g_t^{\mathrm{dir}}m_t^{\mathrm{ent}},0,\lambda)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2608.13179">2608.13179v2</a> · official paper figure and equations</div>
       </article>
     </div>
@@ -297,7 +297,7 @@ li { margin-bottom: 1mm; }
         <p class="lead">TASPO 从同任务的 verified successful siblings 提取与当前 trajectory 对齐的 privileged information，在 action level 计算 likelihood shift，并把它转换为有界、均值为 1 的 advantage weights。</p>
         <ul><li>权重始终为正，不翻转 outcome advantage 的符号。</li><li>每条 trajectory 上权重均值为 1，不改变总体 advantage budget。</li><li>局部 process supervision 只重新分配 credit，不覆盖 verifier 给出的成败结论。</li></ul>
         <img class="figure" src="../assets/agentic-opd-reconstructed/taspo.png" alt="TASPO official figure">
-        <div class="formula">\[\widetilde A_t^i=A_iw_t^i,\qquad 1-\epsilon_w\le w_t^i\le1+\epsilon_w,\qquad \frac1{T_i}\sum_t w_t^i=1\]</div><div class="formula">\[\Delta_{t,k}^i=\operatorname{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,1:k-1}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,1:k-1}^i)]\]</div><div class="formula">\[q_t^i=\tanh\!\left(\frac{\operatorname{sign}(A_i)\bar d_t^i}{\tau}\right)\]</div><div class="formula">\[w_t^i=1+\eta(q_t^i-\bar q_i)\]</div>
+        <div class="formula">\[\widetilde A_t^i=A_iw_t^i,\qquad 1-\epsilon_w\le w_t^i\le1+\epsilon_w,\qquad \frac{1}{T_i}\sum_t w_t^i=1\]</div><div class="formula">\[\Delta_{t,k}^i=\mathrm{sg}[\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid P_i,h_t^i,y_{t,1:k-1}^i)-\log\pi_{\theta_{\mathrm{old}}}(y_{t,k}^i\mid h_t^i,y_{t,1:k-1}^i)]\]</div><div class="formula">\[q_t^i=\tanh\!\left(\frac{\mathrm{sign}(A_i)\bar d_t^i}{\tau}\right)\]</div><div class="formula">\[w_t^i=1+\eta(q_t^i-\bar q_i)\]</div>
         <div class="source">Primary source: <a href="https://arxiv.org/abs/2608.31077">2608.31077v2</a> · official paper figure and equations</div>
       </article>
     </div>
