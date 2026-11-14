@@ -21,6 +21,13 @@
 - [VPD: Variational Policy Distillation](VPD-Learning%20from%20Language%20Feedback%20via%20Variational%20Policy%20Distillation.pdf)：以变分 EM 共同更新教师和学生，从语言反馈获得动态监督。
 - [Echo](Echo-Learning%20from%20Experience%20Data%20via%20User-Driven%20Refinement.pdf)：不涉及 harness 或 OPD，核心是收集用户与 Agent 交互中的 refinement 数据并用于 SFT；与本仓库主线关系较弱，简要了解即可。
 
+## 2026 新增专题：Code / GUI Agent × Harness / OPD
+
+- [Code / GUI Agent × Harness：严选文献与 Benchmark 对照](topics/code-gui-agent-harness-papers-2026.md)：聚焦 openJiuwen、LongHorizon-Harness、GUI-HARVEST、Rethinking Verification、Mid-Harness 等真实运行时机制，分别核验 SWE-bench、Terminal-Bench、OSWorld、AndroidWorld 与混合 GUI/CLI 基准。区分复杂 Harness 与可归因的 Harness 增益。
+- [Code / GUI Agent × OPD：在线蒸馏、特权 Harness 与 Benchmark](topics/code-gui-agent-opd-papers-2026.md)：聚焦 OPRD、CAMP-II、RRE-MOPD/Logics-SWE、CHOP、ComputerSD、GUI-SD-v2、GHD；逐项注明 on-policy 定义、Teacher privilege、loss、部署保留的工具与评测。另设 Harness-Zero、D-OPCD、离线轨迹蒸馏为边界案例。
+
+> 这两份表以 2026-11-14 为检索截点。严格区分 **Harness 优化 / on-policy KL 蒸馏 / MOPD / 在线干预后的 SFT / 离线轨迹蒸馏**，不将异构 benchmark 的原始成绩直接排名。
+
 ## 阅读笔记
 
 - [Agentic OPD 发展脉络（2026.10）重制版](notes/Agentic-OPD-development-roadmap-2026.10-reconstructed.md)：依据原长图结构，从 15 篇论文的官方 arXiv source 重新获取方法图并用原始公式排版；对应可编辑 HTML 与 11 页 PDF 位于 `documents/`。
